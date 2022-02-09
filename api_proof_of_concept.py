@@ -30,6 +30,7 @@ with open( POC_BARCODES_SOURCE, 'rb') as fp:
         data = req.json()
         print( f'data, ``{pprint.pformat(data)}``' )
 
+        ## k, i took these out of the append(), cuz one was failing and I couldn't tell which (was process_type)
         barcode_info = data['item_data'].get('barcode', 'barcode_unavailable')
         library_info = data['item_data']['library'].get('value', 'library_unavailable')
         location_info = data['item_data']['location'].get('desc', 'location_unavailable')
@@ -43,7 +44,6 @@ with open( POC_BARCODES_SOURCE, 'rb') as fp:
         print( f'location_info, ``{location_info}``' )
         print( f'base_status_info, ``{base_status_info}``' )
         print( f'process_type_info, ``{process_type_info}``' )
-
 
         tfp.append(barcode_info + ', ' +
                    library_info + ', ' +
