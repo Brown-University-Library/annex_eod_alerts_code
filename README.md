@@ -6,6 +6,8 @@ This code reconciles the list of the Annex end-of-day barcodes produced by the G
 
 More detail coming.
 
+Note: The check for new-files looks for end-of-day-report files with certain prefixes, archives the originals, then processes the files, then deletes the originals. Note that there are other very similarly-named end-of-day-report files which are not processed or deleted.
+
 ---
 
 ## installation

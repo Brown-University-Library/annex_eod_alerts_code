@@ -42,15 +42,11 @@ class Controller(object):
     def process_files( self ):
         """ Manages calls to functions.
             Called by ``if __name__ == '__main__':`` """
-
-        ## validate source-directory existence ------------
-        ( err, exists) = file_handler.check_source_directory_exists( self.source_directory )
+        ## ensure directories exist ------------
+        err = file_handler.check_directories( [self.source_directory] )
         if err:
-            raise Exception( f'Problem finding source directory, ``{err}``' )
-        elif exists == False:
-            raise Exception( f'Problem finding source directory' )
-
-        ## -- check for new file ----------------
+            raise Exception( f'Problem finding a directory, ``{err}``' )
+        ## -- check for new files -------------------------
         pass
 
     ## end Controller()
