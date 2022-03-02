@@ -37,7 +37,7 @@ class Controller(object):
     """ Manages steps. """
 
     def __init__( self ):
-        self.source_directory = os.environ['ANXEODALERTS__POC_BARCODES_SOURCE_FILEPATH']
+        self.source_directory = os.environ['ANXEODALERTS__SOURCE_DIR']
 
     def process_files( self ):
         """ Manages calls to functions.
@@ -47,7 +47,9 @@ class Controller(object):
         if err:
             raise Exception( f'Problem finding a directory, ``{err}``' )
         ## -- check for new files -------------------------
-        pass
+        (err, dir_files) = file_handler.scan_directory( self.source_directory )
+        if err:
+            raise Exception( f'Problem scanning source-directory, ``{err}``' )
 
     ## end Controller()
 
