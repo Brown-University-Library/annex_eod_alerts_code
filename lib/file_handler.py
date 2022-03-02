@@ -76,7 +76,10 @@ def get_new_files( prefix_list, dir_files ):
                 if ( (position_of_prefix != -1) & (position_of_count_ndicator == -1) ):  # if (prefixes exist AND '.cnt' substring doesn't)
                     new_file_list.append(file_name)
         new_file_list.sort()  # don't need to do this for the production code, but it makes testing easier.
-        log.debug( f'new legit files, ``{new_file_list}``' )
+        if len( new_file_list ) > 0:
+            log.info( f'new legit files, ``{new_file_list}``' )
+        else:
+            log.debug( f'new legit files, ``{new_file_list}``' )
     except Exception as e:
         err = repr(e)
         log.exception( f'Problem checking for new-files, ``{err}``' )

@@ -13,7 +13,7 @@ Steps (roughly)...
     - process-type, location, status-check
     - build alert-list and store it
     - build data-summary and store it
-- ? Save alerts and data-holders?
+- ? Save alerts and data-holders ?
 - Email alert and data-holders as attachments.
 """
 
@@ -43,19 +43,43 @@ class Controller(object):
     def process_files( self ):
         """ Manages calls to functions.
             Called by ``if __name__ == '__main__':`` """
-        ## ensure directories exist ------------
+        ## ensure directories exist ---------------------------------
         err = file_handler.check_directories( [self.source_directory] )
         if err:
             raise Exception( f'Problem finding a directory, ``{err}``' )
-        ## -- check for new files -------------------------
+        ## check for new files --------------------------------------
         (err, dir_files) = file_handler.scan_directory( self.source_directory )
         if err:
             raise Exception( f'Problem scanning source-directory, ``{err}``' )
         (err, new_files) = file_handler.get_new_files( self.prefix_list, dir_files )
         if err:
             raise Exception( f'Problem checking for new files, ``{err}``' )
+        ## process new files ----------------------------------------
+        if new_files:
+            err = self.process_new_files( new_files )
+        if err:
+            raise Exception( f'Problem processing new files, ``{err}``' )
+
+    def process_new_files( self, new_files ):
+        """ Manages calls to functions for found new files.
+            Called by process_files()
+            TODO- this will be vastly expanded. """
+        ## check barcodes against alma ------------------------------
+        ( err, barcode_check_results ) = checker.check_barcodes( new_files )
+        if err:
+            raise Exception( f'Problem checking barcodes, ``{err}``' )
+        ## determine whether to send email --------------------------
+        ( err, email_check ) = checker.check_whether_to_send_email( barcode_check_results )
+        if err:
+            raise Exception( f'Problem determining whether to send email, ``{err}``' )
+        ## send email if necessary ----------------------------------
+        if email_check:
+            err = emailer.send_email( barcode_check_results )
+            if err:
+                raise Exception( f'Problem sending email, ``{err}``' )
 
     ## end Controller()
+
 
 
 if __name__ == '__main__':
