@@ -17,7 +17,7 @@ Steps (roughly)...
 - Email alert and data-holders as attachments.
 """
 
-import logging, os, sys
+import json, logging, os, sys
 
 lvl_dct = { 'DEBUG': logging.DEBUG, 'INFO': logging.INFO }
 lvl = os.environ['ANXEODALERTS__LOG_LEVEL']
@@ -38,6 +38,7 @@ class Controller(object):
 
     def __init__( self ):
         self.source_directory = os.environ['ANXEODALERTS__SOURCE_DIR']
+        self.prefix_list = json.loads( os.environ['ANXEODALERTS__PREFIX_LIST_JSON'] )
 
     def process_files( self ):
         """ Manages calls to functions.
@@ -50,6 +51,9 @@ class Controller(object):
         (err, dir_files) = file_handler.scan_directory( self.source_directory )
         if err:
             raise Exception( f'Problem scanning source-directory, ``{err}``' )
+        (err, new_files) = file_handler.get_new_files( self.prefix_list, dir_files )
+        if err:
+            raise Exception( f'Problem checking for new files, ``{err}``' )
 
     ## end Controller()
 
