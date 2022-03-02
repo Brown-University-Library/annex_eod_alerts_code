@@ -30,7 +30,7 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 sys.path.append( os.environ['ANXEODALERTS__ENCLOSING_PROJECT_PATH'] )
-from annex_eod_alerts_code.lib import file_handler
+from annex_eod_alerts_code.lib import checker, file_handler
 
 
 class Controller(object):
@@ -65,7 +65,7 @@ class Controller(object):
             Called by process_files()
             TODO- this will be vastly expanded. """
         ## check barcodes against alma ------------------------------
-        ( err, barcode_check_results ) = checker.check_barcodes( new_files )
+        ( err, barcode_check_results ) = checker.manage_check_barcodes( new_files )
         if err:
             raise Exception( f'Problem checking barcodes, ``{err}``' )
         ## determine whether to send email --------------------------
