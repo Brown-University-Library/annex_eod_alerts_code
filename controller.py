@@ -30,7 +30,7 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 sys.path.append( os.environ['ANXEODALERTS__ENCLOSING_PROJECT_PATH'] )
-from annex_eod_alerts_code.lib import checker, file_handler
+from annex_eod_alerts_code.lib import checker, emailer, file_handler
 
 
 class Controller(object):
@@ -70,7 +70,7 @@ class Controller(object):
                 raise Exception( f'Problem determining whether to send email, ``{err}``' )
             ## send email if necessary ------------------------------
             if email_check:
-                err = emailer.send_email( barcode_check_results )
+                err = emailer.send_mail( barcode_check_results )
                 if err:
                     raise Exception( f'Problem sending email, ``{err}``' )
         else:
@@ -88,7 +88,7 @@ class Controller(object):
         except Exception as e:
             err = repr(e)
             if err:
-                raise Exception( f'Problem checking non-hay accessions, ``{err}``' )
+                raise Exception( f'Problem checking accessions, ``{err}``' )
         return results_dct
 
     ## end Controller()
