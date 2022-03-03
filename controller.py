@@ -17,7 +17,7 @@ Steps (roughly)...
 - Email alert and data-holders as attachments.
 """
 
-import json, logging, os, sys
+import json, logging, os, pprint, sys
 
 lvl_dct = { 'DEBUG': logging.DEBUG, 'INFO': logging.INFO }
 lvl = os.environ['ANXEODALERTS__LOG_LEVEL']
@@ -56,27 +56,40 @@ class Controller(object):
             raise Exception( f'Problem checking for new files, ``{err}``' )
         ## process new files ----------------------------------------
         if new_files:
-            err = self.process_new_files( new_files )
-        if err:
-            raise Exception( f'Problem processing new files, ``{err}``' )
+            new_file_paths = []
+            for file_name in new_files:
+                new_file_path = f'{self.source_directory}/{file_name}'
+                new_file_paths.append( new_file_path )
+            log.debug( f'new_file_paths, ``{pprint.pformat(new_file_paths)}``' )
+            barcode_check_results = self.process_new_files( new_file_paths )
+            if err:
+                raise Exception( f'Problem processing new files, ``{err}``' )
+            ## determine whether to send email ----------------------
+            ( err, email_check ) = checker.check_whether_to_send_email( barcode_check_results )
+            if err:
+                raise Exception( f'Problem determining whether to send email, ``{err}``' )
+            ## send email if necessary ------------------------------
+            if email_check:
+                err = emailer.send_email( barcode_check_results )
+                if err:
+                    raise Exception( f'Problem sending email, ``{err}``' )
+        else:
+            log.info( 'no new files found' )
 
-    def process_new_files( self, new_files ):
+    def process_new_files( self, new_file_paths ):
         """ Manages calls to functions for found new files.
             Called by process_files()
-            TODO- this will be vastly expanded. """
-        ## check barcodes against alma ------------------------------
-        ( err, barcode_check_results ) = checker.manage_check_barcodes( new_files )
-        if err:
-            raise Exception( f'Problem checking barcodes, ``{err}``' )
-        ## determine whether to send email --------------------------
-        ( err, email_check ) = checker.check_whether_to_send_email( barcode_check_results )
-        if err:
-            raise Exception( f'Problem determining whether to send email, ``{err}``' )
-        ## send email if necessary ----------------------------------
-        if email_check:
-            err = emailer.send_email( barcode_check_results )
+            TODO- this will be vastly expanded with other checks and api-updates. """
+        ## initialize holder dict ---------------------------------------
+        ( err, results_dct ) = ( None, checker.initialize_results_dct() )
+        ## check non-hay-accessions -------------------------------------
+        try:
+            err = checker.check_non_hay_accessions( new_file_paths, results_dct )
+        except Exception as e:
+            err = repr(e)
             if err:
-                raise Exception( f'Problem sending email, ``{err}``' )
+                raise Exception( f'Problem checking non-hay accessions, ``{err}``' )
+        return results_dct
 
     ## end Controller()
 
