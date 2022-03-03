@@ -1,4 +1,4 @@
-import json, logging, os, pprint, smtplib, time
+import datetime, json, logging, os, pprint, smtplib, time
 from email.mime.text import MIMEText
 
 import requests
@@ -11,11 +11,19 @@ def send_mail( barcode_check_results ):
     """ Composes and sends email.
         Called by controller.process_files() """
     EMAIL_HOST = os.environ['ANXEODALERTS__EMAIL_HOST']
-    EMAIL_PORT = os.environ['ANXEODALERTS__EMAIL_FROM']
+    EMAIL_PORT = os.environ['ANXEODALERTS__EMAIL_PORT']
     EMAIL_FROM = os.environ['ANXEODALERTS__EMAIL_FROM']
     EMAIL_RECIPIENTS = json.loads( os.environ['ANXEODALERTS__EMAIL_RECIPIENTS_JSON'] )
-    # log.debug( f'message, ``{message}``' )
     try:
+        assert type(EMAIL_HOST) == str
+        assert type(EMAIL_PORT) == str
+        assert type(EMAIL_FROM) == str
+        assert type(EMAIL_RECIPIENTS) == list
+        log.debug( f'EMAIL_HOST, ``{EMAIL_HOST}``' )
+        log.debug( f'EMAIL_PORT, ``{EMAIL_PORT}``' )
+        log.debug( f'EMAIL_FROM, ``{EMAIL_FROM}``' )
+        log.debug( f'EMAIL_RECIPIENTS, ``{EMAIL_RECIPIENTS}``' )
+
         message = json.dumps( barcode_check_results, indent=2, sort_keys=True )
         s = smtplib.SMTP( EMAIL_HOST, EMAIL_PORT )
         body = f'datetime: `{str(datetime.datetime.now())}`\n\nbarcode check-results...\n\n{message}\n\n[END]'
