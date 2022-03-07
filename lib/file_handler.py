@@ -1,4 +1,4 @@
-import logging, os, pprint
+import json, logging, os, pprint
 
 log = logging.getLogger(__name__)
 
@@ -57,6 +57,22 @@ def scan_directory( dir_path ):
         err = repr(e)
         log.exception( f'Problem scanning directory, ``{err}``' )
     return ( err, new_file_list )
+
+
+def load_recent_file_list( tracker_path ):
+    """ Loads tracker file of recently processed files.
+        Called by controller.process_files() """
+    log.debug( 'loading recently processed files' )
+    ( err, recently_processed_files ) = ( None, [] )
+    try:
+        with open( tracker_path ) as fh:
+            recently_processed_files = json.loads( fh.read() )
+    except Exception as e:
+        err = repr(e)
+        log.exception( 'Problem opening tracker file' )
+    log.debug( f'err, ``{err}``' )
+    log.debug( f'recently_processed_files, ``{pprint.pformat(recently_processed_files)}``' )
+    return ( err, recently_processed_files )
 
 
 def get_new_files( prefix_list, dir_files ):

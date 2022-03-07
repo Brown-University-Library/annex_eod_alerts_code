@@ -39,6 +39,7 @@ class Controller(object):
     def __init__( self ):
         self.source_directory = os.environ['ANXEODALERTS__SOURCE_DIR']
         self.prefix_list = json.loads( os.environ['ANXEODALERTS__PREFIX_LIST_JSON'] )
+        self.tracker_path = os.environ['ANXEODALERTS__TRACKER_FILE_PATH']
 
     def process_files( self ):
         """ Manages calls to functions.
@@ -51,6 +52,11 @@ class Controller(object):
         (err, dir_files) = file_handler.scan_directory( self.source_directory )
         if err:
             raise Exception( f'Problem scanning source-directory, ``{err}``' )
+
+        (err, recent_files) = file_handler.load_recent_file_list( self.tracker_path )
+        if err:
+            raise Exception( f'Problem loading recent file-list, ``{err}``' )
+
         (err, new_files) = file_handler.get_new_files( self.prefix_list, dir_files )
         if err:
             raise Exception( f'Problem checking for new files, ``{err}``' )
