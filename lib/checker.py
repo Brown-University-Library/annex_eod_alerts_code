@@ -13,7 +13,7 @@ def initialize_results_dct():
             'count_problematic_barcodes': 0,
             'list_of_barcodes_not_found_in_alma': []
         },
-        'non_hay_refiles__NOT_YET_IMPLEMENTED': {
+        'non_hay_refiles': {
             'count_barcodes': 0,
             'count_problematic_barcodes': 0,
             'list_of_barcodes_not_found_in_alma': []
@@ -23,7 +23,7 @@ def initialize_results_dct():
             'count_problematic_barcodes': 0,
             'list_of_barcodes_not_found_in_alma': []
         },
-        'hay_refiles__NOT_YET_IMPLEMENTED': {
+        'hay_refiles': {
             'count_barcodes': 0,
             'count_problematic_barcodes': 0,
             'list_of_barcodes_not_found_in_alma': []
@@ -87,11 +87,67 @@ def check_hay_accessions( new_file_paths, results_dct, tracker_path ):
         raise Exception( message )
 
 
+def check_non_hay_refiles( new_file_paths, results_dct, tracker_path ):
+    """ Manages check of non-hay refiles and updates results_dct.
+        Called by controller.process_new_files() """
+    try:
+        target_file_path = select_path( new_file_paths, 'QSREF' )
+        barcode_list = load_barcodes( target_file_path )
+        results_dct['non_hay_refiles']['count_barcodes'] = len( barcode_list )
+        for barcode in barcode_list:
+            log.debug( f'barcode, ``{barcode}``' )
+            ( err, alma_api_data_dct ) = check_alma_api( barcode )
+            time.sleep( .5 )
+            try:
+                if alma_api_data_dct['item_data']['barcode'] != barcode:
+                    log.debug( 'barcode found; continuing' )
+                    pass
+            except Exception as e:
+                log.exception( repr(e) )
+                results_dct['non_hay_refiles']['count_problematic_barcodes'] += 1
+                results_dct['non_hay_refiles']['list_of_barcodes_not_found_in_alma'].append( barcode )
+        log.debug( f'updated results_dct, ``{pprint.pformat(results_dct)}``' )
+        update_tracker( target_file_path, tracker_path )
+        return
+    except Exception as e:
+        message = f'Problem checking non-hay-accessions; exception, ``{repr(e)}``'
+        raise Exception( message )
+
+
+def check_hay_refiles( new_file_paths, results_dct, tracker_path ):
+    """ Manages check of hay refiles and updates results_dct.
+        Called by controller.process_new_files() """
+    try:
+        target_file_path = select_path( new_file_paths, 'QHREF' )
+        barcode_list = load_barcodes( target_file_path )
+        results_dct['hay_refiles']['count_barcodes'] = len( barcode_list )
+        for barcode in barcode_list:
+            log.debug( f'barcode, ``{barcode}``' )
+            ( err, alma_api_data_dct ) = check_alma_api( barcode )
+            time.sleep( .5 )
+            try:
+                if alma_api_data_dct['item_data']['barcode'] != barcode:
+                    log.debug( 'barcode found; continuing' )
+                    pass
+            except Exception as e:
+                log.exception( repr(e) )
+                results_dct['hay_refiles']['count_problematic_barcodes'] += 1
+                results_dct['hay_refiles']['list_of_barcodes_not_found_in_alma'].append( barcode )
+        log.debug( f'updated results_dct, ``{pprint.pformat(results_dct)}``' )
+        update_tracker( target_file_path, tracker_path )
+        return
+    except Exception as e:
+        message = f'Problem checking non-hay-accessions; exception, ``{repr(e)}``'
+        raise Exception( message )
+
+
 def select_path( new_file_paths, selector ):
     """ Returns proper path from paths-list.
         Called by check_non_hay_accessions() and others """
     assert type(new_file_paths) == list
     assert type(selector) == str
+    log.debug( f'new_file_paths, ``{pprint.pformat(new_file_paths)}``' )
+    log.debug( f'selector, ``{selector}``' )
     target_file_path = ''
     for file_path in new_file_paths:
         if selector in file_path:
