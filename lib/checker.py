@@ -1,4 +1,4 @@
-import logging, os, pprint, time
+import json, logging, os, pathlib, pprint, time
 import requests
 
 log = logging.getLogger(__name__)
@@ -33,10 +33,9 @@ def initialize_results_dct():
     return results_dct
 
 
-def check_non_hay_accessions( new_file_paths, results_dct ):
+def check_non_hay_accessions( new_file_paths, results_dct, tracker_path ):
     """ Manages check of non-hay accessions and updates results_dct.
         Called by controller.process_new_files() """
-    err = None
     try:
         target_file_path = select_path( new_file_paths, 'QSACS' )
         barcode_list = load_barcodes( target_file_path )
@@ -54,15 +53,16 @@ def check_non_hay_accessions( new_file_paths, results_dct ):
                 results_dct['non_hay_accessions']['count_problematic_barcodes'] += 1
                 results_dct['non_hay_accessions']['list_of_barcodes_not_found_in_alma'].append( barcode )
         log.debug( f'updated results_dct, ``{pprint.pformat(results_dct)}``' )
+        update_tracker( target_file_path, tracker_path )
+        return
     except Exception as e:
-        err = repr(e)
-    return err
+        message = f'Problem checking non-hay-accessions; exception, ``{repr(e)}``'
+        raise Exception( message )
 
 
-def check_hay_accessions( new_file_paths, results_dct ):
+def check_hay_accessions( new_file_paths, results_dct, tracker_path ):
     """ Manages check of non-hay accessions and updates results_dct.
         Called by controller.process_new_files() """
-    err = None
     try:
         target_file_path = select_path( new_file_paths, 'QHACS' )
         barcode_list = load_barcodes( target_file_path )
@@ -80,9 +80,11 @@ def check_hay_accessions( new_file_paths, results_dct ):
                 results_dct['hay_accessions']['count_problematic_barcodes'] += 1
                 results_dct['hay_accessions']['list_of_barcodes_not_found_in_alma'].append( barcode )
         log.debug( f'updated results_dct, ``{pprint.pformat(results_dct)}``' )
+        update_tracker( target_file_path, tracker_path )
+        return
     except Exception as e:
-        err = repr(e)
-    return err
+        message = f'Problem checking hay-accessions; exception, ``{repr(e)}``'
+        raise Exception( message )
 
 
 def select_path( new_file_paths, selector ):
@@ -157,3 +159,27 @@ def check_whether_to_send_email( results_dct ):
         err = repr(e)
     log.debug( f'send_email_result, ``{send_email_result}``' )
     return ( err, send_email_result )
+
+
+def update_tracker( file_path, tracker_path ):
+    """ Updates tracker with filename.
+        Called by check_hay_accessions(), etc. """
+    try:
+        log.debug( f'file_path, ``{file_path}``' )
+        assert type(file_path) == str
+        assert type(tracker_path) == str
+        recently_processed_files = []
+        with open( tracker_path ) as fh_reader:
+            recently_processed_files = json.loads( fh_reader.read() )
+        path_obj = pathlib.Path( file_path )
+        file_name = path_obj.name
+        log.debug( f'file_name, ``{file_name}``')
+        recently_processed_files.append( file_name )
+        with open( tracker_path, 'w' ) as fh_writer:
+            jsn = json.dumps( recently_processed_files, sort_keys=True, indent=2 )
+            fh_writer.write( jsn )
+        return
+    except Exception as e:
+        message = f'Problem updating tracker; exception, ``{repr(e)}``'
+        log.exception( message )
+        raise Exception( message )
