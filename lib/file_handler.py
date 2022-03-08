@@ -1,4 +1,4 @@
-import json, logging, os, pprint
+import json, logging, os, pathlib, pprint, shutil, time
 
 log = logging.getLogger(__name__)
 
@@ -101,33 +101,44 @@ def get_new_files( prefix_list, dir_files, recent_files ):
     return ( err, new_file_list )
 
 
-# def get_new_files( prefix_list, dir_files, recent_files ):
-#     """ Returns target new-files in from dir_files.
-#         Called by controller.process_files()
-#         TODO: go through dir_files instead, and break when I have four files. """
-#     log.debug( 'starting get_new_files()' )
-#     ( err, new_file_list ) = ( None, None )
-#     try:
-#         assert type(prefix_list) == list
-#         assert type(dir_files) == list
-#         assert type(recent_files) == list
-#         new_file_list = []
-#         for prefix in prefix_list:
-#             for file_name in dir_files:
-#                 position_of_prefix = str.find( file_name, prefix )   # haystack, needle. Will be -1 if not found.
-#                 position_of_count_ndicator = str.find(file_name, '.cnt')
-#                 if ( (position_of_prefix != -1) & (position_of_count_ndicator == -1) ):  # if (prefixes exist AND '.cnt' substring doesn't)
-#                     if file_name not in recent_files:
-#                         new_file_list.append(file_name)
-#         new_file_list.sort()  # don't need to do this for the production code, but it makes testing easier.
-#         if len( new_file_list ) > 0:
-#             log.info( f'new legit files, ``{new_file_list}``' )
-#         else:
-#             log.debug( f'new legit files, ``{new_file_list}``' )
-#     except Exception as e:
-#         err = repr(e)
-#         log.exception( f'Problem checking for new-files, ``{err}``' )
-#     return ( err, new_file_list )
+def archive_new_files( new_file_names, source_dir, archive_dir ):
+    """ Archives files and returns paths-dict.
+        Called by controller.process_files() """
+    ( err, paths_dct ) = ( None, {} )
+    try:
+        paths_dct = {
+            'non_hay_accessions_archive_path': '',
+            'hay_accessions_archive_path': '',
+            'non_hay_refiles_archive_path': '',
+            'hay_refiles_archive_path': '' }
+        datestamp = make_datestamp()
+        for file_name in new_file_names:
+            if file_name[0:5] == 'QSACS':
+                source_path = f'{source_dir}/{file_name}'
+                log.debug( f'source_path, ``{source_path}``' )
+                archive_file_name = f'{"QSACS"}_{datestamp}.txt'
+                archive_path = f'{archive_dir}/{archive_file_name}'
+                shutil.copyfile( source_path, archive_path )
+                time.sleep( .25 )
+                path_test = pathlib.Path( archive_path )
+                assert path_test.is_file()
+    except Exception as e:
+        err = repr(e)
+        log.exception( 'Problem archiving new files, ``{err}``')
+    log.debug( f'err, ``{err}``; paths_dct, ``{pprint.pformat(paths_dct)}``' )
+    return ( err, paths_dct )
 
 
+def make_datestamp( time_obj=None ):
+    """ Returns datestamp_string for archived files.
+        The 'time_to_format_tuple' is for testing.
+        Called by archive_new_files() """
+    types = ["<class 'time.struct_time'>", "<class 'NoneType'>"]
+    assert repr( type(time_obj) ) in types
+    if time_obj == None:
+        time_obj = time.localtime()
+    formatted_time = time.strftime("%Y-%m-%dT%H-%M-%S", time_obj)
+    assert type(formatted_time) == str
+    log.debug( f'formatted_time, ``{formatted_time}``' )
+    return formatted_time
 
