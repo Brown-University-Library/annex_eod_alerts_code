@@ -57,11 +57,14 @@ class Controller(object):
         if err:
             raise Exception( f'Problem loading recent file-list, ``{err}``' )
 
-        (err, new_files) = file_handler.get_new_files( self.prefix_list, dir_files )
+        (err, new_files) = file_handler.get_new_files( self.prefix_list, dir_files, recent_files )
         if err:
             raise Exception( f'Problem checking for new files, ``{err}``' )
         ## process new files ----------------------------------------
         if new_files:
+            ## archive new files
+            pass
+            ## process new files
             new_file_paths = []
             for file_name in new_files:
                 new_file_path = f'{self.source_directory}/{file_name}'
@@ -79,6 +82,7 @@ class Controller(object):
                 err = emailer.send_mail( barcode_check_results )
                 if err:
                     raise Exception( f'Problem sending email, ``{err}``' )
+
         else:
             log.info( 'no new files found' )
 
@@ -86,15 +90,16 @@ class Controller(object):
         """ Manages calls to functions for found new files.
             Called by process_files()
             TODO- this will be vastly expanded with other checks and api-updates. """
-        ## initialize holder dict ---------------------------------------
-        ( err, results_dct ) = ( None, checker.initialize_results_dct() )
-        ## check non-hay-accessions -------------------------------------
-        try:
-            err = checker.check_non_hay_accessions( new_file_paths, results_dct )
-        except Exception as e:
-            err = repr(e)
-            if err:
-                raise Exception( f'Problem checking accessions, ``{err}``' )
+        ## initialize holder dict -----------------------------------
+        results_dct = checker.initialize_results_dct()
+        ## check non-hay-accessions ---------------------------------
+        checker.check_non_hay_accessions( new_file_paths, results_dct, self.tracker_path )
+        ## check hay-accessions -------------------------------------
+        checker.check_hay_accessions( new_file_paths, results_dct, self.tracker_path )
+        ## check non-hay-refiles ------------------------------------
+        checker.check_non_hay_refiles( new_file_paths, results_dct, self.tracker_path )
+        ## check hay-refiles ----------------------------------------
+        checker.check_hay_refiles( new_file_paths, results_dct, self.tracker_path )
         return results_dct
 
     ## end Controller()
