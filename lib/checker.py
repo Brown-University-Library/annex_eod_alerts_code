@@ -191,14 +191,14 @@ def check_alma_api( barcode ):
         log.debug( f'url, ``{url}``' )
         full_url = url.format(barcode=barcode)
         log.debug( f'full_url, ``{full_url}``' )
-        req = requests.get(full_url, headers=headers,)
+        req = requests.get( full_url, headers=headers, timeout=10 )
         alma_api_data_dct = req.json()
         log.debug( f'alma_api_data_dct, ``{pprint.pformat(alma_api_data_dct)}``' )
         log.debug( f'keys, ``{alma_api_data_dct.keys()}``' )
     except Exception as e:
         log.exception( 'Problem accessing alma-api with barcode, ``{barcode}``' )
         err = repr(e)
-        raise Exception( err )
+        # raise Exception( err )
     log.debug( f'alma_api_data_dct, ``{alma_api_data_dct}``' )
     return ( err, alma_api_data_dct )
 

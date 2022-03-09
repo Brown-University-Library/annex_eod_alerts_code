@@ -26,7 +26,7 @@ with open( POC_BARCODES_SOURCE, 'rb') as fp:
         barcode=line.decode('utf8').strip()
         full_url = url.format(barcode=barcode)
         print( f'full_ulr, ``{full_url}``' )
-        req = requests.get(full_url, headers=headers,)
+        req = requests.get(full_url, headers=headers, timeout=10 )
         data = req.json()
         print( f'data, ``{pprint.pformat(data)}``' )
 
