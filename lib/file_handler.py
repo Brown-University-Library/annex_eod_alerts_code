@@ -157,14 +157,22 @@ def make_datestamp( time_obj=None ):
     return formatted_time
 
 
-def delete_processed_files( new_files ):
+def delete_processed_files( new_files, source_dir ):
     """ Deletes processed files.
         Called by controller.manage_processing() """
     err = None
     try:
         assert type(new_files) == list
+        assert type(source_dir) == str
         log.debug( f'new_files, ``{pprint.pformat(new_files)}``' )
-        pass
+        for file_name in new_files:
+            log.debug( f'about to delte processed file, ``{file_name}``' )
+            file_path = f'{source_dir}/{file_name}'
+            os.remove( file_path )
+            path_test = pathlib.Path( file_path )
+            assert( path_test.is_file() == False )
+        log.debug( 'delete_processed_files() complete' )
     except Exception as e:
+        log.exception( 'Problem deleting processed files.' )
         err = repr(e)
     return err

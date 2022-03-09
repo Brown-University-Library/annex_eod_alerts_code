@@ -9,7 +9,7 @@ log = logging.getLogger(__name__)
 
 def send_mail( barcode_check_results ):
     """ Composes and sends email.
-        Called by controller.process_files() """
+        Called by controller.manage_processing() """
     EMAIL_HOST = os.environ['ANXEODALERTS__EMAIL_HOST']
     EMAIL_PORT = os.environ['ANXEODALERTS__EMAIL_PORT']
     EMAIL_FROM = os.environ['ANXEODALERTS__EMAIL_FROM']

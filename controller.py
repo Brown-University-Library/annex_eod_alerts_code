@@ -84,7 +84,7 @@ class Controller(object):
                 if err:
                     raise Exception( f'Problem sending email, ``{err}``' )
             ## delete processed files -------------------------------
-            err = file_handler.delete_processed_files( new_files )
+            err = file_handler.delete_processed_files( new_files, self.source_directory )
             if err:
                 raise Exception( f'Problem deleting processed files, ``{err}``' )
             log.debug( 'end of manage_processing()' )
