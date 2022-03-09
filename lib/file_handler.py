@@ -5,7 +5,7 @@ log = logging.getLogger(__name__)
 
 def check_directories( dir_paths ):
     """ Checks that directories exists.
-        Called by controller.process_files() """
+        Called by controller.manage_processing() """
     log.debug( 'starting check_directories()' )
     err = None
     try:
@@ -28,7 +28,7 @@ def check_directories( dir_paths ):
 
 def scan_directory( dir_path ):
     """ Returns file-paths in directory.
-        Called by controller.process_files()
+        Called by controller.manage_processing()
         TODO- get list sorted reverse-chronologically for faster subsequent processing. """
     log.debug( 'starting scan_directory' )
     ( err, new_file_list ) = ( None, None )
@@ -61,7 +61,7 @@ def scan_directory( dir_path ):
 
 def load_recent_file_list( tracker_path ):
     """ Loads tracker file of recently processed files.
-        Called by controller.process_files() """
+        Called by controller.manage_processing() """
     log.debug( 'loading recently processed files' )
     ( err, recently_processed_files ) = ( None, [] )
     try:
@@ -77,7 +77,7 @@ def load_recent_file_list( tracker_path ):
 
 def get_new_files( prefix_list, dir_files, recent_files ):
     """ Returns target new-files in from dir_files.
-        Called by controller.process_files()
+        Called by controller.manage_processing()
         TODO: go through dir_files instead, and break when I have four files. """
     log.debug( 'starting get_new_files()' )
     ( err, new_file_list ) = ( None, None )
@@ -103,7 +103,7 @@ def get_new_files( prefix_list, dir_files, recent_files ):
 
 def archive_new_files( new_file_names, source_dir, archive_dir ):
     """ Archives files and returns paths-dict.
-        Called by controller.process_files() """
+        Called by controller.manage_processing() """
     ( err, paths_dct ) = ( None, {} )
     try:
         paths_dct = {
@@ -156,3 +156,15 @@ def make_datestamp( time_obj=None ):
     log.debug( f'formatted_time, ``{formatted_time}``' )
     return formatted_time
 
+
+def delete_processed_files( new_files ):
+    """ Deletes processed files.
+        Called by controller.manage_processing() """
+    err = None
+    try:
+        assert type(new_files) == list
+        log.debug( f'new_files, ``{pprint.pformat(new_files)}``' )
+        pass
+    except Exception as e:
+        err = repr(e)
+    return err

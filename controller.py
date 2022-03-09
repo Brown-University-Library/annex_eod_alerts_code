@@ -42,7 +42,7 @@ class Controller(object):
         self.prefix_list = json.loads( os.environ['ANXEODALERTS__PREFIX_LIST_JSON'] )
         self.tracker_path = os.environ['ANXEODALERTS__TRACKER_FILE_PATH']
 
-    def process_files( self ):
+    def manage_processing( self ):
         """ Manages calls to functions.
             Called by ``if __name__ == '__main__':`` """
         ## ensure directories exist ---------------------------------
@@ -83,8 +83,11 @@ class Controller(object):
                 err = emailer.send_mail( barcode_check_results )
                 if err:
                     raise Exception( f'Problem sending email, ``{err}``' )
-            ## delete processed files
-            pass
+            ## delete processed files -------------------------------
+            err = file_handler.delete_processed_files( new_files )
+            if err:
+                raise Exception( f'Problem deleting processed files, ``{err}``' )
+            log.debug( 'end of manage_processing()' )
         else:
             log.info( 'no new files found' )
 
@@ -109,7 +112,7 @@ class Controller(object):
 
 
 if __name__ == '__main__':
-    log.debug( '\n\nstarting processing...' )
+    log.info( '\n\nstarting processing...' )
     c = Controller()
-    c.process_files()
-    log.debug( 'processing complete\n---' )
+    c.manage_processing()
+    log.info( 'processing complete\n---' )
