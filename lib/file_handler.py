@@ -40,19 +40,21 @@ def scan_directory( dir_path ):
             directory = dir_path
         log.debug( f'scanned-directory, ``{directory}``' )
         file_list = os.listdir(directory)
-        log.debug( f'file_list, ``{pprint.pformat(file_list)}``' )
-        ## 1) eliminate .DS_Store & 2) eliminate directories
+        log.debug( f'file_list (count-``{len(file_list)}``), ``{pprint.pformat(file_list)}``' )
+        ## eliminate `.DS_Store`, eliminate directories, eliminate `.cnt` files
         new_file_list = []
         for file_name in file_list:
             if file_name == '.DS_Store':
-                pass
+                continue
+            elif '.cnt' in file_name:
+                continue
             else:
                 sub_dir_name = dir_path + file_name
                 if os.path.isdir( sub_dir_name ):
-                    pass
+                    continue
                 else:
                     new_file_list.append( file_name )
-        log.debug( f'pruned file-list, ``{new_file_list}``' )
+        log.debug( f'pruned file-list (count-``{len(new_file_list)}``), ``{new_file_list}``' )
     except Exception as e:
         err = repr(e)
         log.exception( f'Problem scanning directory, ``{err}``' )
