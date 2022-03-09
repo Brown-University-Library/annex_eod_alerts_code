@@ -202,7 +202,6 @@ def check_alma_api( barcode ):
         Called by check_non_hay_accessions() and others. """
     ( err, alma_api_data_dct ) = ( None, {} )
     try:
-        1/0
         URL_ROOT = os.environ['ANXEODALERTS__ITEM_API_ROOT']
         API_KEY = os.environ['ANXEODALERTS__ITEM_API_KEY']
         headers = {'Accept': 'application/json'}
