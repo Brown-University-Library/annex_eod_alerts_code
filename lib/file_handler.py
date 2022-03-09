@@ -113,19 +113,33 @@ def archive_new_files( new_file_names, source_dir, archive_dir ):
             'hay_refiles_archive_path': '' }
         datestamp = make_datestamp()
         for file_name in new_file_names:
+            source_path = f'{source_dir}/{file_name}'
+            log.debug( f'source_path, ``{source_path}``' )
             if file_name[0:5] == 'QSACS':
-                source_path = f'{source_dir}/{file_name}'
-                log.debug( f'source_path, ``{source_path}``' )
                 archive_file_name = f'{"QSACS"}_{datestamp}.txt'
                 archive_path = f'{archive_dir}/{archive_file_name}'
-                shutil.copyfile( source_path, archive_path )
-                time.sleep( .25 )
-                path_test = pathlib.Path( archive_path )
-                assert path_test.is_file()
+                paths_dct['non_hay_accessions_archive_path'] = archive_path
+            elif file_name[0:5] == 'QHACS':
+                archive_file_name = f'{"QHACS"}_{datestamp}.txt'
+                archive_path = f'{archive_dir}/{archive_file_name}'
+                paths_dct['hay_accessions_archive_path'] = archive_path
+            elif file_name[0:5] == 'QSREF':
+                archive_file_name = f'{"QSREF"}_{datestamp}.txt'
+                archive_path = f'{archive_dir}/{archive_file_name}'
+                paths_dct['non_hay_refiles_archive_path'] = archive_path
+            elif file_name[0:5] == 'QHREF':
+                archive_file_name = f'{"QHREF"}_{datestamp}.txt'
+                archive_path = f'{archive_dir}/{archive_file_name}'
+                paths_dct['hay_refiles_archive_path'] = archive_path
+            shutil.copyfile( source_path, archive_path )
+            time.sleep( .25 )
+            path_test = pathlib.Path( archive_path )
+            assert path_test.is_file()
     except Exception as e:
         err = repr(e)
         log.exception( 'Problem archiving new files, ``{err}``')
-    log.debug( f'err, ``{err}``; paths_dct, ``{pprint.pformat(paths_dct)}``' )
+    log.debug( f'err, ``{err}``' )
+    log.debug( f'paths_dct, ``{pprint.pformat(paths_dct)}``' )
     return ( err, paths_dct )
 
 

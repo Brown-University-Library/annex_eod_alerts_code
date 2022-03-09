@@ -4,29 +4,33 @@ import requests
 log = logging.getLogger(__name__)
 
 
-def initialize_results_dct():
+def initialize_results_dct( archive_paths_dct ):
     """ Creates structure to hold check-data.
         Called by manages_check_barcodes() """
     results_dct = {
         'non_hay_accessions': {
             'count_barcodes': 0,
             'count_problematic_barcodes': 0,
-            'list_of_barcodes_not_found_in_alma': []
+            'list_of_barcodes_not_found_in_alma': [],
+            'path_to_archived_file': archive_paths_dct['non_hay_accessions_archive_path']
         },
         'non_hay_refiles': {
             'count_barcodes': 0,
             'count_problematic_barcodes': 0,
-            'list_of_barcodes_not_found_in_alma': []
+            'list_of_barcodes_not_found_in_alma': [],
+            'path_to_archived_file': archive_paths_dct['non_hay_refiles_archive_path']
         },
         'hay_accessions': {
             'count_barcodes': 0,
             'count_problematic_barcodes': 0,
-            'list_of_barcodes_not_found_in_alma': []
+            'list_of_barcodes_not_found_in_alma': [],
+            'path_to_archived_file': archive_paths_dct['hay_accessions_archive_path']
         },
         'hay_refiles': {
             'count_barcodes': 0,
             'count_problematic_barcodes': 0,
-            'list_of_barcodes_not_found_in_alma': []
+            'list_of_barcodes_not_found_in_alma': [],
+            'path_to_archived_file': archive_paths_dct['hay_refiles_archive_path']
         },
     }
     log.debug( f'initialized results_dct, ``{pprint.pformat(results_dct)}``' )
@@ -43,7 +47,7 @@ def check_non_hay_accessions( new_file_paths, results_dct, tracker_path ):
         for barcode in barcode_list:
             log.debug( f'barcode, ``{barcode}``' )
             ( err, alma_api_data_dct ) = check_alma_api( barcode )
-            time.sleep( .5 )
+            time.sleep( .25 )
             try:
                 if alma_api_data_dct['item_data']['barcode'] != barcode:
                     log.debug( 'barcode found; continuing' )
@@ -70,7 +74,7 @@ def check_hay_accessions( new_file_paths, results_dct, tracker_path ):
         for barcode in barcode_list:
             log.debug( f'barcode, ``{barcode}``' )
             ( err, alma_api_data_dct ) = check_alma_api( barcode )
-            time.sleep( .5 )
+            time.sleep( .25 )
             try:
                 if alma_api_data_dct['item_data']['barcode'] != barcode:
                     log.debug( 'barcode found; continuing' )
@@ -97,7 +101,7 @@ def check_non_hay_refiles( new_file_paths, results_dct, tracker_path ):
         for barcode in barcode_list:
             log.debug( f'barcode, ``{barcode}``' )
             ( err, alma_api_data_dct ) = check_alma_api( barcode )
-            time.sleep( .5 )
+            time.sleep( .25 )
             try:
                 if alma_api_data_dct['item_data']['barcode'] != barcode:
                     log.debug( 'barcode found; continuing' )
@@ -124,7 +128,7 @@ def check_hay_refiles( new_file_paths, results_dct, tracker_path ):
         for barcode in barcode_list:
             log.debug( f'barcode, ``{barcode}``' )
             ( err, alma_api_data_dct ) = check_alma_api( barcode )
-            time.sleep( .5 )
+            time.sleep( .25 )
             try:
                 if alma_api_data_dct['item_data']['barcode'] != barcode:
                     log.debug( 'barcode found; continuing' )

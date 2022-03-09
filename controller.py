@@ -62,7 +62,7 @@ class Controller(object):
         ## process new files ----------------------------------------
         if new_files:
             ## archive new files
-            ( err, paths_dct ) = file_handler.archive_new_files( new_files, self.source_directory, self.archives_directory )
+            ( err, archive_paths_dct ) = file_handler.archive_new_files( new_files, self.source_directory, self.archives_directory )
             if err:
                 raise Exception( f'Problem archiving new_files; see logs.' )
             ## process new files
@@ -71,7 +71,7 @@ class Controller(object):
                 new_file_path = f'{self.source_directory}/{file_name}'
                 new_file_paths.append( new_file_path )
             log.debug( f'new_file_paths, ``{pprint.pformat(new_file_paths)}``' )
-            barcode_check_results = self.process_new_files( new_file_paths )
+            barcode_check_results = self.process_new_files( new_file_paths, archive_paths_dct )
             if err:
                 raise Exception( f'Problem processing new files, ``{err}``' )
             ## determine whether to send email ----------------------
@@ -83,15 +83,17 @@ class Controller(object):
                 err = emailer.send_mail( barcode_check_results )
                 if err:
                     raise Exception( f'Problem sending email, ``{err}``' )
+            ## delete processed files
+            pass
         else:
             log.info( 'no new files found' )
 
-    def process_new_files( self, new_file_paths ):
+    def process_new_files( self, new_file_paths, archive_paths_dct ):
         """ Manages calls to functions for found new files.
             Called by process_files()
             TODO- this will be vastly expanded with other checks and api-updates. """
         ## initialize holder dict -----------------------------------
-        results_dct = checker.initialize_results_dct()
+        results_dct = checker.initialize_results_dct( archive_paths_dct )
         ## check non-hay-accessions ---------------------------------
         checker.check_non_hay_accessions( new_file_paths, results_dct, self.tracker_path )
         ## check hay-accessions -------------------------------------
@@ -110,4 +112,4 @@ if __name__ == '__main__':
     log.debug( '\n\nstarting processing...' )
     c = Controller()
     c.process_files()
-    log.debug( 'processing complete' )
+    log.debug( 'processing complete\n---' )
