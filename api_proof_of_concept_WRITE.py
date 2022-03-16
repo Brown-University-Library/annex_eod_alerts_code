@@ -4,16 +4,25 @@ Proof-of-concept showing results of accessing the alma items-api.
 Usage...
 - % cd ./annex_eod_alerts_code
 - % source ../env/bin/activate
-- % python3 ./api_proof_of_concept_READ.py
+- % python3 ./api_proof_of_concept_WRITE.py --barcode=1234
 '''
 
-import json, os, pprint
+import json, logging, os, pprint
 import requests
 
+
+logging.basicConfig(
+    # filename=zzz,
+    level=logging.DEBUG,
+    format='[%(asctime)s] %(levelname)s [%(module)s-%(funcName)s()::%(lineno)d] %(message)s',
+    datefmt='%d/%b/%Y %H:%M:%S' )
+log = logging.getLogger(__name__)
+
+
 URL_ROOT = os.environ['ANXEODALERTS__ITEM_API_ROOT']
-API_KEY = os.environ['ANXEODALERTS__ITEM_API_KEY']
-POC_BARCODES_SOURCE = os.environ['ANXEODALERTS__POC_BARCODES_SOURCE_FILEPATH']
-POC_OUTPUT = os.environ['ANXEODALERTS__POC_BARCODES_OUTPUT_FILEPATH']
+API_KEY_WRITE = os.environ['ANXEODALERTS__ITEM_API_KEY_WRITE']
+POC_OUTPUT = os.environ['ANXEODALERTS__POC_BARCODES_WRITE_OUTPUT_FILEPATH']
+
 
 headers = {'Accept': 'application/json'}
 url = "%s?item_barcode={barcode}&apikey=%s" % ( URL_ROOT, API_KEY )
