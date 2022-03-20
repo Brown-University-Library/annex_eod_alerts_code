@@ -27,16 +27,16 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 
-ITEM_GET_URL_ROOT = os.environ['ANXEODALERTS__ITEM_API_ROOT']
-ITEM_PUT_URL_ROOT = os.environ['ANXEODALERTS__ITEM_PUT_API_ROOT']
-API_KEY_WRITE = os.environ['ANXEODALERTS__ITEM_API_KEY_WRITE']
+ITEM_GET_URL_ROOT: str = os.environ['ANXEODALERTS__ITEM_API_ROOT']
+ITEM_PUT_URL_ROOT: str = os.environ['ANXEODALERTS__ITEM_PUT_API_ROOT']
+API_KEY_WRITE: str = os.environ['ANXEODALERTS__ITEM_API_KEY_WRITE']
 
 
-def manage_update( barcode: str ):
+def manage_update( barcode: str ) -> None:
     return
 
 
-def parse_args():
+def parse_args() -> dict:
     """ Parses arguments when module called via __main__ """
     parser = argparse.ArgumentParser( description='Required: barcode.' )
     parser.add_argument( '--barcode', '-b', help='barcode required', required=True )
