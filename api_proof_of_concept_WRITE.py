@@ -1,13 +1,21 @@
 '''
-Proof-of-concept showing results of accessing the alma items-api.
+Proof-of-concept showing results of updating an item via the alma items-api.
 
 Usage...
 - % cd ./annex_eod_alerts_code
 - % source ../env/bin/activate
-- % python3 ./api_proof_of_concept_WRITE.py --barcode=1234
+- % python3 ./api_proof_of_concept_WRITE.py --mmsid 123 --holding-id 456 --item-pid 789
+
+Steps...
+- parse barcode argument
+- hit barcode url
+- pull out mmsid, holdings_id, and item_pid
+- construct payload
+- hit item-put url
+- confirm response
 '''
 
-import json, logging, os, pprint
+import argparse, json, logging, os, pprint
 import requests
 
 
@@ -19,46 +27,25 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 
-URL_ROOT = os.environ['ANXEODALERTS__ITEM_API_ROOT']
+ITEM_GET_URL_ROOT = os.environ['ANXEODALERTS__ITEM_API_ROOT']
+ITEM_PUT_URL_ROOT = os.environ['ANXEODALERTS__ITEM_PUT_API_ROOT']
 API_KEY_WRITE = os.environ['ANXEODALERTS__ITEM_API_KEY_WRITE']
-POC_OUTPUT = os.environ['ANXEODALERTS__POC_BARCODES_WRITE_OUTPUT_FILEPATH']
 
 
-headers = {'Accept': 'application/json'}
-url = "%s?item_barcode={barcode}&apikey=%s" % ( URL_ROOT, API_KEY )
-print( f'url, ``{url}``' )
+def manage_update( barcode: str ):
+    return
 
-tfp = [ 'BARCODE, LIBRARY, LOCATION, BASE_STATUS, PROCESS_TYPE\n' ]  # heading-row
 
-with open( POC_BARCODES_SOURCE, 'rb') as fp:
-    for line in fp:
-        barcode=line.decode('utf8').strip()
-        full_url = url.format(barcode=barcode)
-        print( f'full_ulr, ``{full_url}``' )
-        req = requests.get(full_url, headers=headers, timeout=10 )
-        data = req.json()
-        print( f'data, ``{pprint.pformat(data)}``' )
+def parse_args():
+    """ Parses arguments when module called via __main__ """
+    parser = argparse.ArgumentParser( description='Required: barcode.' )
+    parser.add_argument( '--barcode', '-b', help='barcode required', required=True )
+    args: dict = vars( parser.parse_args() )
+    return args
 
-        ## k, i took these out of the append(), cuz one was failing and I couldn't tell which (was process_type)
-        barcode_info = data['item_data'].get('barcode', 'barcode_unavailable')
-        library_info = data['item_data']['library'].get('value', 'library_unavailable')
-        location_info = data['item_data']['location'].get('desc', 'location_unavailable')
-        base_status_info = data['item_data']['base_status'].get('desc', 'base_status_description_unavailable')
-        process_type_info = data['item_data']['process_type'].get('desc', 'process_type_description_unavailable')
-        if process_type_info is None:
-            process_type_info = 'process_type_description_unavailable'
 
-        print( f'barcode_info, ``{barcode_info}``' )
-        print( f'library_info, ``{library_info}``' )
-        print( f'location_info, ``{location_info}``' )
-        print( f'base_status_info, ``{base_status_info}``' )
-        print( f'process_type_info, ``{process_type_info}``' )
-
-        tfp.append(barcode_info + ', ' +
-                   library_info + ', ' +
-                   location_info + ', ' +
-                   base_status_info + ', ' +
-                   process_type_info +
-                   '\n')
-        with open( POC_OUTPUT, 'w', encoding="utf-8") as txt:
-            txt.writelines(tfp)
+if __name__ == '__main__':
+    args: dict = parse_args()
+    log.debug( f'args, ```{args}```' )
+    barcode: str = args['barcode']
+    manage_update( barcode )
