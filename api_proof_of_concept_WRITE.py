@@ -46,7 +46,7 @@ def manage_update( barcode: str ) -> None:
     # log.debug( f'get_url, ``{get_url}``' )
     r = requests.get( get_url, headers={'Accept': 'application/json'}, timeout=10 )
     ## inspect result -----------------------------------------------
-    log.debug( f'item-get r.status_code, ``{r.status_code}``' )
+    # log.debug( f'item-get r.status_code, ``{r.status_code}``' )
     # log.debug( f' r.content, ``{r.content}``')
     data: dict = r.json()
     log.debug( f'original data, ``{pprint.pformat(data)}``' )
@@ -55,11 +55,11 @@ def manage_update( barcode: str ) -> None:
     holding_id = data['holding_data']['holding_id']
     item_pid = data['item_data']['pid']
     internal_note_1 = data['item_data']['internal_note_1']
-    library_info = data['item_data']['library']
+    library_info = data['item_data']['library']  # for this proof-of-concept, we don't need library, location, status, and process-type; this just documents accessing those
     location_info = data['item_data']['location']
     base_status_info: str = data['item_data']['base_status']
     process_type_info = data['item_data']['process_type']
-    extracted_data: dict = {  # for this proof-of-concept, we don't need library, location, status, and process-type; this just documents accessing those
+    extracted_data: dict = {  
         'mmsid': mmsid,
         'holding_id': holding_id,
         'item_pid': item_pid,
@@ -85,13 +85,11 @@ def manage_update( barcode: str ) -> None:
     put_url = f'{put_url_base}?generate_description=false&apikey={API_KEY_WRITE}'
     # log.debug( f'put_url, ``{put_url}``' )
     header_dct = {'Accept': 'application/json', 'Content-Type': 'application/json'}  # 'Content-Type' not needed for GET
-    # r = requests.put( put_url, data=payload_dct, headers=header_dct, timeout=10 )
     r = requests.put( put_url, json=payload_dct, headers=header_dct, timeout=10 )
     ## inspect result -----------------------------------------------
     # log.debug( f' r.content, ``{r.content}``')
     post_put_data: dict = r.json()
     log.debug( f'post_put_data, ``{pprint.pformat(post_put_data)}``' )
-    ## inspect response ---------------------------------------------
     assert post_put_data['item_data']['internal_note_1'] == new_note
     log.info( 'success!' )
     return
