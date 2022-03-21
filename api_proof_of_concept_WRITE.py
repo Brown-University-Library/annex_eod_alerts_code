@@ -2,9 +2,12 @@
 Proof-of-concept showing results of updating an item via the Alma API.
 This will take a barcode, and update the item's 'internal_note_1' field with a new date-stamp, 
     - if the field is empty, or
-    - if the field contains the string `api_test`s
+    - if the field contains the string `api_test`
 
 Usage...
+- assumes:
+    - `requests` is in python-environment
+    - three environmental-variables are set (see below, after logging config)
 - % cd ./annex_eod_alerts_code
 - % source ../env/bin/activate
 - % python3 ./api_proof_of_concept_WRITE.py --barcode 12345678
@@ -56,7 +59,7 @@ def manage_update( barcode: str ) -> None:
     location_info = data['item_data']['location']
     base_status_info: str = data['item_data']['base_status']
     process_type_info = data['item_data']['process_type']
-    extracted_data: dict = {
+    extracted_data: dict = {  # for this proof-of-concept, we don't need library, location, status, and process-type; this just documents accessing those
         'mmsid': mmsid,
         'holding_id': holding_id,
         'item_pid': item_pid,
