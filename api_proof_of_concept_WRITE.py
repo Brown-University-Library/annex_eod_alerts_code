@@ -35,26 +35,36 @@ API_KEY_WRITE: str = os.environ['ANXEODALERTS__ITEM_API_KEY_WRITE']
 
 
 def manage_update( barcode: str ) -> None:
+    ## call item-get api --------------------------------------------
     log.debug( f'ITEM_GET_URL_ROOT, ``{ITEM_GET_URL_ROOT}``' )
     get_url: str = f'{ITEM_GET_URL_ROOT}?item_barcode={barcode}&apikey={API_KEY_WRITE}'
     # log.debug( f'get_url, ``{get_url}``' )
     r = requests.get( get_url, headers={'Accept': 'application/json'}, timeout=10 )
+    ## inspect result -----------------------------------------------
     log.debug( f'item-get r.status_code, ``{r.status_code}``' )
     # log.debug( f' r.content, ``{r.content}``')
     data: dict = r.json()
     log.debug( f'original data, ``{pprint.pformat(data)}``' )
-    #
-    library_info: str = data['item_data']['library']
-    location_info: str = data['item_data']['location']
+    ## extract data -------------------------------------------------
+    internal_note_1 = data['item_data']['internal_note_1']
+    library_info = data['item_data']['library']
+    location_info = data['item_data']['location']
     base_status_info: str = data['item_data']['base_status']
     process_type_info = data['item_data']['process_type']
     # 
     extracted_data: dict = {
+        'internal_note_1': internal_note_1,
         'library_info': library_info,
         'location_info': location_info,
         'base_status_info': base_status_info,
         'process_type_info': process_type_info, }
     log.debug( f'extracted_data, ``{pprint.pformat(extracted_data)}``' )
+    ## change data --------------------------------------------------
+    
+    ## call item-put api
+
+    ## inspect response
+    
     return
 
 
