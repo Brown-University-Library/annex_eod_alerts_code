@@ -1,10 +1,24 @@
-import argparse, csv, datetime,  io, json, logging, os, pprint, sys
-# import email
+'''
+Proof-of-concept showing how to build a CSV from (hard-coded) Alma-API data -- and then send it.
 
-from email.mime.multipart import MIMEMultipart
+Usage...
+- assumes:
+    - two environmental-variables are set (see below, after logging config)
+- % cd ./annex_eod_alerts_code
+- % source ../env/bin/activate
+- % python3 ./proof_of_concept_csv_email.py --email the-email-address
+
+Steps...
+- extract necessary/convenient data from Alma item-api responses
+- build a CSV using a file-like-object, instead of reading/writing to an actual file-system file
+- build the email, attaching the CSV, and send
+'''
+
+import argparse, csv, io, logging, os, pprint, smtplib
+
 from email.mime.application import MIMEApplication
+from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-import smtplib
 
 
 logging.basicConfig(
@@ -14,6 +28,10 @@ logging.basicConfig(
     datefmt='%d/%b/%Y %H:%M:%S' )
 log = logging.getLogger(__name__)
 log.debug( 'logging ready' )
+
+
+ENVAR_SMTP_SERVER: str = os.environ[ 'ANXEODALERTS__TEST_EMAIL_SMTP_SERVER' ]
+ENVAR_SMTP_PORT: str = os.environ[ 'ANXEODALERTS__TEST_EMAIL_SMTP_PORT' ]
 
 
 def manage_csv_email( email_address: str ) -> None:
@@ -72,13 +90,14 @@ def send_mail( file_like_handler, email_address: str ):
         TODO test multiple attachments. """
     ## setup
     EMAIL_SUBJECT: str = 'The Subject'
-    EMAIL_FROM: str = os.environ[ 'ANXEODALERTS__TEST_EMAIL_FROM' ]
+    # EMAIL_FROM: str = os.environ[ 'ANXEODALERTS__TEST_EMAIL_FROM' ]
+    EMAIL_FROM: str = 'donotreply_annex-end-of-day-reports@brown.edu'
     # EMAIL_TO = os.environ[ 'ANXEODALERTS__TEST_EMAIL_TO_STRING' ]
     EMAIL_TO: str = email_address
     MESSAGE_BODY: str = 'The message body.'
     FILE_NAME: str = 'test.csv'  # this could be the name of the file-processed; TODO: multiple files!
-    SMTP_SERVER: str = os.environ[ 'ANXEODALERTS__TEST_EMAIL_SMTP_SERVER' ]
-    SMTP_PORT: int = int( os.environ[ 'ANXEODALERTS__TEST_EMAIL_SMTP_PORT' ] )
+    SMTP_SERVER: str = ENVAR_SMTP_SERVER
+    SMTP_PORT: int = int( ENVAR_SMTP_PORT )
     ## create multipart message
     msg = MIMEMultipart()
     body_part = MIMEText(MESSAGE_BODY, _subtype='plain', _charset='utf-8' )
