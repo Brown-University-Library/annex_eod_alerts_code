@@ -21,8 +21,8 @@ def manage_email( email_address: str ) -> None:
     for data in results:
         assert type(data) == dict
         title: str = data['bib_data']['title']  # accessing elements separately so if there's an error, the traceback will show where it occurred
-        if len(title) > 20:
-            title = f'{title[0:17]}...'
+        if len(title) > 30:
+            title = f'{title[0:27]}...'
         mmsid: str = stringify_data( data['bib_data']['mms_id'] ) 
         holding_id: str = stringify_data( data['holding_data']['holding_id'] )
         item_pid: str = stringify_data( data['item_data']['pid'] )
@@ -40,15 +40,18 @@ def manage_email( email_address: str ) -> None:
     ## build csv
     file_like_handler = io.StringIO()
     # csv.writer( file_like_handler ).writerows( extracted_results )
-    csv.writer( file_like_handler, delimiter=':', quoting=csv.QUOTE_ALL, doublequote=False, escapechar='\\' ).writerows( extracted_results )
+    csv.writer( file_like_handler, delimiter=',', quoting=csv.QUOTE_ALL, doublequote=False, escapechar='\\' ).writerows( extracted_results )
     file_like_handler.seek( 0 )
     rows: list = file_like_handler.readlines()
-    log.debug( f'type(rows), ``{type(rows)}``' )
-    log.debug( f'rows, ``{rows}``' )
+    # log.debug( f'type(rows), ``{type(rows)}``' )
+    # log.debug( f'rows, ``{rows}``' )
     for row in rows:
         log.debug( f'row, ``{row}``' )
 
+
+
     return
+
 
 def stringify_data( data ) -> str:
     if type( data ) != str:
@@ -71,7 +74,7 @@ def load_source_data() -> list:
    'network_number': ['(OCoLC)ocm23041861', '(RPB)b3387895x-01bu_inst'],
    'place_of_publication': 'Kyōto :',
    'publisher_const': 'Tankō Shinsha',
-   'title': 'Nihon no dentō zen no seikatsu = The life of Zen /'},
+   'title': 'Nihon "test" no dentō zen no seikatsu = The life of Zen /'},
   'holding_data': {'accession_number': '',
    'call_number': 'BQ9265.4 S28x 1966',
    'call_number_type': {'desc': 'Library of Congress classification',
