@@ -25,9 +25,14 @@ def manage_email( email_address: str ) -> None:
     extracted_results: list = [ header_row ]
     for data in results:
         assert type(data) == dict
-        title: bytes = data['bib_data']['title'].encode( 'utf-8' )  # accessing elements separately so if there's an error, the traceback will show where it occurred
+ 
+        # title: bytes = data['bib_data']['title'].encode( 'utf-8' )  # accessing elements separately so if there's an error, the traceback will show where it occurred
+        # if len(title) > 30:
+        #     title = f'{title[0:27]}...'.encode( 'utf-8' )
+        title: str = data['bib_data']['title']  # accessing elements separately so if there's an error, the traceback will show where it occurred
         if len(title) > 30:
-            title = f'{title[0:27]}...'.encode( 'utf-8' )
+            title = f'{title[0:27]}...'
+
         mmsid: str = stringify_data( data['bib_data']['mms_id'] ) 
         holding_id: str = stringify_data( data['holding_data']['holding_id'] )
         item_pid: str = stringify_data( data['item_data']['pid'] )
@@ -45,7 +50,8 @@ def manage_email( email_address: str ) -> None:
     ## build csv ----------------------------------------------------
     file_like_handler = io.StringIO()
     # csv.writer( file_like_handler ).writerows( extracted_results )
-    csv.writer( file_like_handler, delimiter=',', quoting=csv.QUOTE_ALL, doublequote=False, escapechar='\\' ).writerows( extracted_results )
+    csv.writer( file_like_handler, dialect='excel' ).writerows( extracted_results )
+    # csv.writer( file_like_handler, delimiter=',', quoting=csv.QUOTE_ALL, doublequote=False, escapechar='\\' ).writerows( extracted_results )
     file_like_handler.seek( 0 )
     rows: list = file_like_handler.readlines()
     # log.debug( f'type(rows), ``{type(rows)}``' )
@@ -82,8 +88,8 @@ def send_mail( file_like_handler ):
     # Create a multipart message
     msg = MIMEMultipart()
     # body_part = MIMEText(MESSAGE_BODY, 'plain')   
-    # body_part = MIMEText(MESSAGE_BODY, _subtype='plain', _charset='utf-8' )
-    body_part = MIMEText(MESSAGE_BODY, _subtype='plain', _charset='ascii' )
+    body_part = MIMEText(MESSAGE_BODY, _subtype='plain', _charset='utf-8' )
+    # body_part = MIMEText(MESSAGE_BODY, _subtype='plain', _charset='ascii' )
     msg['Subject'] = EMAIL_SUBJECT
     msg['From'] = EMAIL_FROM
     msg['To'] = EMAIL_TO
