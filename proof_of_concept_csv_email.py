@@ -81,7 +81,8 @@ def send_mail( file_like_handler ):
 
     # Create a multipart message
     msg = MIMEMultipart()
-    body_part = MIMEText(MESSAGE_BODY, 'plain')
+    # body_part = MIMEText(MESSAGE_BODY, 'plain')   
+    body_part = MIMEText(MESSAGE_BODY, _subtype='plain', _charset='utf-8' )
     msg['Subject'] = EMAIL_SUBJECT
     msg['From'] = EMAIL_FROM
     msg['To'] = EMAIL_TO
