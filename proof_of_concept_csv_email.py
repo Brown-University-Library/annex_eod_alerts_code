@@ -1,5 +1,10 @@
 import argparse, csv, datetime,  io, json, logging, os, pprint, sys
-import email
+# import email
+
+from email.mime.multipart import MIMEMultipart
+from email.mime.application import MIMEApplication
+from email.mime.text import MIMEText
+import smtplib
 
 
 logging.basicConfig(
@@ -37,7 +42,7 @@ def manage_email( email_address: str ) -> None:
         extracted_results.append( extracted_data )
     log.debug( f'extracted_results, ``{pprint.pformat(extracted_results)}``' )
 
-    ## build csv
+    ## build csv ----------------------------------------------------
     file_like_handler = io.StringIO()
     # csv.writer( file_like_handler ).writerows( extracted_results )
     csv.writer( file_like_handler, delimiter=',', quoting=csv.QUOTE_ALL, doublequote=False, escapechar='\\' ).writerows( extracted_results )
@@ -48,8 +53,8 @@ def manage_email( email_address: str ) -> None:
     for row in rows:
         log.debug( f'row, ``{row}``' )
 
-
-
+    ## build email --------------------------------------------------
+    send_mail( file_like_handler )
     return
 
 
@@ -57,6 +62,47 @@ def stringify_data( data ) -> str:
     if type( data ) != str:
         data = repr( data )
     return data
+
+
+def send_mail( file_like_handler ):
+
+    # ITEM_GET_URL_ROOT: str = os.environ['ANXEODALERTS__ITEM_API_ROOT']
+
+    EMAIL_SUBJECT = 'The Subject'
+    EMAIL_FROM = os.environ[ 'ANXEODALERTS__TEST_EMAIL_FROM' ]
+    EMAIL_TO = os.environ[ 'ANXEODALERTS__TEST_EMAIL_TO_STRING' ]
+    MESSAGE_BODY = 'The message body.'
+    # PATH_TO_CSV_FILE = Path to the zip file
+    FILE_NAME = 'test.csv'
+    SMTP_SERVER = os.environ[ 'ANXEODALERTS__TEST_EMAIL_SMTP_SERVER' ]
+    SMTP_PORT = os.environ[ 'ANXEODALERTS__TEST_EMAIL_SMTP_PORT' ]
+    # SMTP_USERNAME = Username for SMTP
+    # SMTP_PASSWORD = SMTP password
+
+    # Create a multipart message
+    msg = MIMEMultipart()
+    body_part = MIMEText(MESSAGE_BODY, 'plain')
+    msg['Subject'] = EMAIL_SUBJECT
+    msg['From'] = EMAIL_FROM
+    msg['To'] = EMAIL_TO
+    # Add body to email
+    msg.attach(body_part)
+
+    # # open and read the CSV file in binary
+    # with open(PATH_TO_CSV_FILE,'rb') as file:
+    # # Attach the file with filename to the email
+    #     msg.attach(MIMEApplication(file.read(), Name=FILE_NAME))
+
+    msg.attach( MIMEApplication(file_like_handler.read(), Name=FILE_NAME) )
+
+    # Create SMTP object
+    smtp_obj = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+    # Login to the server
+    # smtp_obj.login(SMTP_USERNAME, SMTP_PASSWORD)
+
+    # Convert the message to a string and send it
+    smtp_obj.sendmail(msg['From'], msg['To'], msg.as_string())
+    smtp_obj.quit()
 
 
 def load_source_data() -> list:
