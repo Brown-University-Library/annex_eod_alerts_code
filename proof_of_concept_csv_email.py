@@ -75,7 +75,7 @@ def send_mail( file_like_handler ):
     # PATH_TO_CSV_FILE = Path to the zip file
     FILE_NAME = 'test.csv'
     SMTP_SERVER = os.environ[ 'ANXEODALERTS__TEST_EMAIL_SMTP_SERVER' ]
-    SMTP_PORT = os.environ[ 'ANXEODALERTS__TEST_EMAIL_SMTP_PORT' ]
+    SMTP_PORT = int( os.environ[ 'ANXEODALERTS__TEST_EMAIL_SMTP_PORT' ] )
     # SMTP_USERNAME = Username for SMTP
     # SMTP_PASSWORD = SMTP password
 
@@ -93,6 +93,7 @@ def send_mail( file_like_handler ):
     # # Attach the file with filename to the email
     #     msg.attach(MIMEApplication(file.read(), Name=FILE_NAME))
 
+    file_like_handler.seek( 0 )
     msg.attach( MIMEApplication(file_like_handler.read(), Name=FILE_NAME) )
 
     # Create SMTP object
