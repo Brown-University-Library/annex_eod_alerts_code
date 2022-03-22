@@ -16,7 +16,9 @@ log = logging.getLogger(__name__)
 log.debug( 'logging ready' )
 
 
-def manage_email( email_address: str ) -> None:
+def manage_csv_email( email_address: str ) -> None:
+    """ Manages creation and sending of CSV file.
+        Called by __main__ """
     ## load source-data ---------------------------------------------
     results: list = load_source_data()  # keeps manager function neat
     ## extract necessary data ---------------------------------------
@@ -25,14 +27,9 @@ def manage_email( email_address: str ) -> None:
     extracted_results: list = [ header_row ]
     for data in results:
         assert type(data) == dict
- 
-        # title: bytes = data['bib_data']['title'].encode( 'utf-8' )  # accessing elements separately so if there's an error, the traceback will show where it occurred
-        # if len(title) > 30:
-        #     title = f'{title[0:27]}...'.encode( 'utf-8' )
         title: str = data['bib_data']['title']  # accessing elements separately so if there's an error, the traceback will show where it occurred
         if len(title) > 30:
             title = f'{title[0:27]}...'
-
         mmsid: str = stringify_data( data['bib_data']['mms_id'] ) 
         holding_id: str = stringify_data( data['holding_data']['holding_id'] )
         item_pid: str = stringify_data( data['item_data']['pid'] )
@@ -46,76 +43,66 @@ def manage_email( email_address: str ) -> None:
         assert len( extracted_data ) == 9
         extracted_results.append( extracted_data )  # type: ignore
     log.debug( f'extracted_results, ``{pprint.pformat(extracted_results)}``' )
-
     ## build csv ----------------------------------------------------
     file_like_handler = io.StringIO()
-    # csv.writer( file_like_handler ).writerows( extracted_results )
     csv.writer( file_like_handler, dialect='excel' ).writerows( extracted_results )
     # csv.writer( file_like_handler, delimiter=',', quoting=csv.QUOTE_ALL, doublequote=False, escapechar='\\' ).writerows( extracted_results )
-    file_like_handler.seek( 0 )
-    rows: list = file_like_handler.readlines()
-    # log.debug( f'type(rows), ``{type(rows)}``' )
-    # log.debug( f'rows, ``{rows}``' )
-    for row in rows:
-        log.debug( f'row, ``{row}``' )
-
-    ## build email --------------------------------------------------
-    send_mail( file_like_handler )
+    # file_like_handler.seek( 0 )
+    # rows: list = file_like_handler.readlines()
+    # for row in rows:
+    #     log.debug( f'row, ``{row}``' )
+    ## build and send email -----------------------------------------
+    send_mail( file_like_handler, email_address )
     return
+
+    ## end def manage_csv_email()
 
 
 def stringify_data( data ) -> str:
+    """ Ensures data (in this example sometimes a dict) is returned as a string.
+        Called by manage_csv_email() """
     if type( data ) != str:
         data = repr( data )
     return data
 
 
-def send_mail( file_like_handler ):
-
-    # ITEM_GET_URL_ROOT: str = os.environ['ANXEODALERTS__ITEM_API_ROOT']
-
-    EMAIL_SUBJECT = 'The Subject'
-    EMAIL_FROM = os.environ[ 'ANXEODALERTS__TEST_EMAIL_FROM' ]
-    EMAIL_TO = os.environ[ 'ANXEODALERTS__TEST_EMAIL_TO_STRING' ]
-    MESSAGE_BODY = 'The message body.'
-    # PATH_TO_CSV_FILE = Path to the zip file
-    FILE_NAME = 'test.csv'
-    SMTP_SERVER = os.environ[ 'ANXEODALERTS__TEST_EMAIL_SMTP_SERVER' ]
-    SMTP_PORT = int( os.environ[ 'ANXEODALERTS__TEST_EMAIL_SMTP_PORT' ] )
-    # SMTP_USERNAME = Username for SMTP
-    # SMTP_PASSWORD = SMTP password
-
-    # Create a multipart message
+def send_mail( file_like_handler, email_address: str ):
+    """ Tests build of email with a CSV attachment.
+        Called by manage_csv_email() 
+        TODO test multiple attachments. """
+    ## setup
+    EMAIL_SUBJECT: str = 'The Subject'
+    EMAIL_FROM: str = os.environ[ 'ANXEODALERTS__TEST_EMAIL_FROM' ]
+    # EMAIL_TO = os.environ[ 'ANXEODALERTS__TEST_EMAIL_TO_STRING' ]
+    EMAIL_TO: str = email_address
+    MESSAGE_BODY: str = 'The message body.'
+    FILE_NAME: str = 'test.csv'  # this could be the name of the file-processed; TODO: multiple files!
+    SMTP_SERVER: str = os.environ[ 'ANXEODALERTS__TEST_EMAIL_SMTP_SERVER' ]
+    SMTP_PORT: int = int( os.environ[ 'ANXEODALERTS__TEST_EMAIL_SMTP_PORT' ] )
+    ## create multipart message
     msg = MIMEMultipart()
-    # body_part = MIMEText(MESSAGE_BODY, 'plain')   
     body_part = MIMEText(MESSAGE_BODY, _subtype='plain', _charset='utf-8' )
     # body_part = MIMEText(MESSAGE_BODY, _subtype='plain', _charset='ascii' )
     msg['Subject'] = EMAIL_SUBJECT
     msg['From'] = EMAIL_FROM
     msg['To'] = EMAIL_TO
-    # Add body to email
+    ## add body to email
     msg.attach(body_part)
-
-    # # open and read the CSV file in binary
-    # with open(PATH_TO_CSV_FILE,'rb') as file:
-    # # Attach the file with filename to the email
-    #     msg.attach(MIMEApplication(file.read(), Name=FILE_NAME))
-
+    ## add CSV
     file_like_handler.seek( 0 )
     msg.attach( MIMEApplication(file_like_handler.read(), Name=FILE_NAME) )
-
-    # Create SMTP object
+    ## create SMTP object
     smtp_obj = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-    # Login to the server
-    # smtp_obj.login(SMTP_USERNAME, SMTP_PASSWORD)
-
-    # Convert the message to a string and send it
-    smtp_obj.sendmail(msg['From'], msg['To'], msg.as_string())
+    ## send mail
+    smtp_obj.sendmail( msg['From'], msg['To'], msg.as_string() )
     smtp_obj.quit()
+    return
+
+    ## end def send_mail()
 
 
 def load_source_data() -> list:
-    """ Just returns the dict; only purpose is to keep the manager-code readable.
+    """ Just returns list of item-response dicts; only purpose is to keep the manager-code readable.
         Called by manage_email() """
     source_lst = [
  {'bib_data': {'author': 'Satō, Kōji,',
@@ -308,4 +295,4 @@ if __name__ == '__main__':
     args: dict = parse_args()
     log.debug( f'args, ```{args}```' )
     email_address: str = args['email']
-    manage_email( email_address )
+    manage_csv_email( email_address )
