@@ -25,9 +25,9 @@ def manage_email( email_address: str ) -> None:
     extracted_results: list = [ header_row ]
     for data in results:
         assert type(data) == dict
-        title: str = data['bib_data']['title']  # accessing elements separately so if there's an error, the traceback will show where it occurred
+        title: bytes = data['bib_data']['title'].encode( 'utf-8' )  # accessing elements separately so if there's an error, the traceback will show where it occurred
         if len(title) > 30:
-            title = f'{title[0:27]}...'
+            title = f'{title[0:27]}...'.encode( 'utf-8' )
         mmsid: str = stringify_data( data['bib_data']['mms_id'] ) 
         holding_id: str = stringify_data( data['holding_data']['holding_id'] )
         item_pid: str = stringify_data( data['item_data']['pid'] )
@@ -39,7 +39,7 @@ def manage_email( email_address: str ) -> None:
         extracted_data: list = [
             title, mmsid, holding_id, item_pid, library_info, location_info, base_status_info, process_type_info, bruknow_url ] 
         assert len( extracted_data ) == 9
-        extracted_results.append( extracted_data )
+        extracted_results.append( extracted_data )  # type: ignore
     log.debug( f'extracted_results, ``{pprint.pformat(extracted_results)}``' )
 
     ## build csv ----------------------------------------------------
