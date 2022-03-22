@@ -21,7 +21,7 @@ Steps...
 - confirm the response contains the changed note
 '''
 
-import argparse, datetime,  json, logging, os, pprint, sys
+import argparse, datetime, json, logging, os, pprint, sys
 import requests
 
 
