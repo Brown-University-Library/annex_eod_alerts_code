@@ -15,25 +15,25 @@ def manage_email( email_address: str ) -> None:
     ## load source-data ---------------------------------------------
     results: list = load_source_data()  # keeps manager function neat
     ## extract necessary data ---------------------------------------
-    header_row = ['title', 'mmsid', 'holding_id', 'item_pid', 'library_info', 'location_info', 'base_status_info', 'process_type_info'] 
-    assert len( header_row ) == 8
+    header_row = ['title', 'mmsid', 'holding_id', 'item_pid', 'library_info', 'location_info', 'base_status_info', 'process_type_info', 'bruknow_url'] 
+    assert len( header_row ) == 9
     extracted_results: list = [ header_row ]
     for data in results:
         assert type(data) == dict
         title: str = data['bib_data']['title']  # accessing elements separately so if there's an error, the traceback will show where it occurred
-        if len(title) > 10:
-            title = f'{title[0:7]}...'
-        mmsid: str = data['bib_data']['mms_id']
-        holding_id: str = data['holding_data']['holding_id']
-        item_pid: str = data['item_data']['pid']
-        library_info: str = data['item_data']['library']  
-        location_info: str = data['item_data']['location']
-        base_status_info: str = data['item_data']['base_status']
-        process_type_info: str = data['item_data']['process_type']
-        assert type(process_type_info) == int, type(process_type_info)
+        if len(title) > 20:
+            title = f'{title[0:17]}...'
+        mmsid: str = stringify_data( data['bib_data']['mms_id'] ) 
+        holding_id: str = stringify_data( data['holding_data']['holding_id'] )
+        item_pid: str = stringify_data( data['item_data']['pid'] )
+        library_info: str = stringify_data( data['item_data']['library'] )
+        location_info: str = stringify_data( data['item_data']['location'] )
+        base_status_info: str = stringify_data( data['item_data']['base_status'] )
+        process_type_info: str = stringify_data( data['item_data']['process_type'] )
+        bruknow_url: str = f'<https://bruknow.library.brown.edu/discovery/fulldisplay?docid=alma{mmsid}&vid=01BU_INST:BROWN>'
         extracted_data: list = [
-            title, mmsid, holding_id, item_pid, library_info, location_info, base_status_info, process_type_info ] 
-        assert len( extracted_data ) == 8
+            title, mmsid, holding_id, item_pid, library_info, location_info, base_status_info, process_type_info, bruknow_url ] 
+        assert len( extracted_data ) == 9
         extracted_results.append( extracted_data )
     log.debug( f'extracted_results, ``{pprint.pformat(extracted_results)}``' )
 
