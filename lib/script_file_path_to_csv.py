@@ -16,7 +16,9 @@ log.debug( 'logging ready' )
 
 
 ENVAR_SMTP_HOST: str = os.environ[ 'ANXEODALERTS__EMAIL_HOST' ]
-ENVAR_SMTP_PORT: str = os.environ[ 'ANXEODALERTS_EMAIL_PORT' ]
+ENVAR_SMTP_PORT: str = os.environ[ 'ANXEODALERTS__EMAIL_PORT' ]
+ENVAR_ITEM_GET_URL_ROOT: str = os.environ['ANXEODALERTS__ITEM_API_ROOT']
+ENVAR_API_KEY: str = os.environ['ANXEODALERTS__ITEM_API_KEY_WRITE']
 
 
 def manage_barcode_processing( file_path: str, email_address: str ) -> None:
@@ -55,14 +57,24 @@ def manage_barcode_processing( file_path: str, email_address: str ) -> None:
     csv.writer( file_like_handler, dialect='excel' ).writerows( all_extracted_data )
 
     ## email csv
-    send_mail( file_like_handler, email_address )
+    send_mail( file_like_handler, file_name, email_address )
 
     return
 
     ## end def manage_barcode_processing()
 
 
-def send_mail( file_like_handler, email_address: str ) -> None:
+def prepare_api_url( barcode: str ) -> dict:
+    headers = {}
+    api_url: str = f'{ENVAR_ITEM_GET_URL_ROOT}?item_barcode={barcode}&apikey={ENVAR_API_KEY}'
+    headers: dict = {'Accept': 'application/json'}
+    url_data: dict = {
+        'headers': headers, 'api_url': api_url }
+    log.debug( 'api url_data prepared' )
+    return url_data
+
+
+def send_mail( file_like_handler, file_name: str, email_address: str ) -> None:
     """ Tests build of email with a CSV attachment.
         Called by manage_csv_email() 
         TODO test multiple attachments. """
@@ -73,7 +85,12 @@ def send_mail( file_like_handler, email_address: str ) -> None:
     # EMAIL_TO = os.environ[ 'ANXEODALERTS__TEST_EMAIL_TO_STRING' ]
     EMAIL_TO: str = email_address
     MESSAGE_BODY: str = 'The message body.'
-    FILE_NAME: str = 'test.csv'  # this could be the name of the file-processed; TODO: multiple files!
+    if '.' in file_name:
+        name_parts: list = file_name.split( '.' )
+        file_name = f'{name_parts[0]}.csv'
+    else:
+        file_name = f'{file_name}.csv'
+    FILE_NAME: str = file_name
     SMTP_SERVER: str = ENVAR_SMTP_HOST
     SMTP_PORT: int = int( ENVAR_SMTP_PORT )
     ## create multipart message
@@ -131,15 +148,6 @@ def stringify_data( data ) -> str:
     if type( data ) != str:
         data = repr( data )
     return data
-
-
-def prepare_api_url( barcode: str ) -> dict:
-    headers = {}
-    api_url = ''
-    url_data: dict = {
-        'headers': headers, 'api_url': api_url }
-    log.debug( 'api url_data prepared' )
-    return url_data
 
 
 def parse_args() -> dict:
