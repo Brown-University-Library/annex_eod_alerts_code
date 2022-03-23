@@ -35,9 +35,14 @@ def manage_barcode_processing( file_path: str, email_address: str ) -> None:
     log.debug( f'``{len(barcodes)}`` barcodes perceived' )
     
     ## iterate through barcodes
-    all_extracted_data: list = ['title', 'barcode', 'birkin_note', 'mmsid', 'holding_id', 'item_pid', 'library_info', 'location_info', 'base_status_info', 'process_type_info', 'bruknow_url'] 
-    assert len(all_extracted_data) == 11
+    all_extracted_data: list = [
+        ['title', 'barcode', 'birkin_note', 'mmsid', 'holding_id', 'item_pid', 'library_info', 'location_info', 'base_status_info', 'process_type_info', 'bruknow_url']
+    ] 
+    assert len( all_extracted_data[0] ) == 11
     for barcode in barcodes:
+
+        ## strip new-line
+        barcode = barcode.strip()
 
         ## call api
         url_data: dict = prepare_api_url( barcode )
@@ -45,14 +50,17 @@ def manage_barcode_processing( file_path: str, email_address: str ) -> None:
         try:
             r = requests.get( url_data['api_url'], headers=url_data['headers'] )
             item_data = r.json()
+            # log.debug( f'item_data, ``{pprint.pformat(item_data)}``' )
         except Exception as e:
             log.exception( 'problem accessing barcode, ``{barcode}``')
 
         ## extract data elements
         extracted_data: list = extract_data( barcode, item_data )
         all_extracted_data.append( extracted_data )  # type: ignore
+        # log.debug( f'all_extracted_data (in-process), ``{pprint.pformat(all_extracted_data)}``' )
 
     ## create csv from extracted_data
+    # log.debug( f'all_extracted_data (FINAL), ``{pprint.pformat(all_extracted_data)}``' )
     file_like_handler = io.StringIO()
     csv.writer( file_like_handler, dialect='excel' ).writerows( all_extracted_data )
 
