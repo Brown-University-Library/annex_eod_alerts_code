@@ -33,6 +33,14 @@ def manage_barcode_processing( file_path: str, email_address: str ) -> None:
     with open( file_path, 'r' ) as fh:
         barcodes = fh.readlines()
     log.debug( f'``{len(barcodes)}`` barcodes perceived' )
+
+    ## clean barcodes -----------------------------------------------
+    cleaned_barcodes: list = []  # removes newlines and possible empty line
+    for barcode in barcodes:
+        barcode = barcode.strip()
+        if barcode:
+            cleaned_barcodes.append( barcode )
+    barcodes = cleaned_barcodes
     
     ## iterate through barcodes
     all_extracted_data: list = [
@@ -40,9 +48,6 @@ def manage_barcode_processing( file_path: str, email_address: str ) -> None:
     ] 
     assert len( all_extracted_data[0] ) == 11
     for barcode in barcodes:
-
-        ## strip new-line
-        barcode = barcode.strip()
 
         ## call api
         url_data: dict = prepare_api_url( barcode )
@@ -80,6 +85,48 @@ def prepare_api_url( barcode: str ) -> dict:
         'headers': headers, 'api_url': api_url }
     log.debug( 'api url_data prepared' )
     return url_data
+
+
+def extract_data( barcode: str, item_data: dict ) -> list:
+    """ Returns data-elements for the CSV from either:
+        - populated api item_data
+        - or, on unsuccessful api-call, just the barcode and note
+        """
+    try:
+        ## initialize vars
+        ( title, barcode, birkin_note, mmsid, holding_id, item_pid, library_info, location_info, base_status_info, process_type_info, bruknow_url ) = ( '', barcode, '', '', '', '', '', '', '', '', '' )
+        # if item_data == {}:
+        #     birkin_note = 'unable to query barcode'
+        if 'errorsExist' in item_data.keys():
+            birkin_note = 'unable to query barcode'
+            log.info( f'item_data on extraction-problem, ``{pprint.pformat(item_data)}``' )
+        else:
+            title: str = item_data['bib_data']['title']  # accessing elements separately so if there's an error, the traceback will show where it occurred
+            if len(title) > 30:
+                title = f'{title[0:27]}...'
+            mmsid: str = stringify_data( item_data['bib_data']['mms_id'] ) 
+            holding_id: str = stringify_data( item_data['holding_data']['holding_id'] )
+            item_pid: str = stringify_data( item_data['item_data']['pid'] )
+            library_info: str = stringify_data( item_data['item_data']['library'] )
+            location_info: str = stringify_data( item_data['item_data']['location'] )
+            base_status_info: str = stringify_data( item_data['item_data']['base_status'] )
+            process_type_info: str = stringify_data( item_data['item_data']['process_type'] )
+            bruknow_url: str = f'<https://bruknow.library.brown.edu/discovery/fulldisplay?docid=alma{mmsid}&vid=01BU_INST:BROWN>'
+        extracted_data = [ title, barcode, birkin_note, mmsid, holding_id, item_pid, library_info, location_info, base_status_info, process_type_info, bruknow_url ]
+    except Exception as e:
+        log.exception( f'problem extracting data from item_data, ``{pprint.pformat(item_data)}``' )
+        raise Exception( 'problem extracting data; see logs' )
+    log.debug( f'extracted_data, ``{pprint.pformat(extracted_data)}``' )
+    assert len(extracted_data) == 11
+    return extracted_data
+    
+
+def stringify_data( data ) -> str:
+    """ Ensures data (in this example sometimes a dict) is returned as a string.
+        Called by extract_data() """
+    if type( data ) != str:
+        data = repr( data )
+    return data
 
 
 def send_mail( file_like_handler, file_name: str, email_address: str ) -> None:
@@ -121,41 +168,6 @@ def send_mail( file_like_handler, file_name: str, email_address: str ) -> None:
     return
 
     ## end def send_mail()
-
-
-def extract_data( barcode: str, item_data: dict ) -> list:
-    """ Returns data-elements for the CSV from either:
-        - populated api item_data
-        - or, on unsuccessful api-call, just the barcode and note
-        """
-    ## initialize vars
-    ( title, barcode, birkin_note, mmsid, holding_id, item_pid, library_info, location_info, base_status_info, process_type_info, bruknow_url ) = ( '', barcode, '', '', '', '', '', '', '', '', '' )
-    if item_data == {}:
-        birkin_note = 'unable to query barcode'
-    else:
-        title: str = item_data['bib_data']['title']  # accessing elements separately so if there's an error, the traceback will show where it occurred
-        if len(title) > 30:
-            title = f'{title[0:27]}...'
-        mmsid: str = stringify_data( item_data['bib_data']['mms_id'] ) 
-        holding_id: str = stringify_data( item_data['holding_data']['holding_id'] )
-        item_pid: str = stringify_data( item_data['item_data']['pid'] )
-        library_info: str = stringify_data( item_data['item_data']['library'] )
-        location_info: str = stringify_data( item_data['item_data']['location'] )
-        base_status_info: str = stringify_data( item_data['item_data']['base_status'] )
-        process_type_info: str = stringify_data( item_data['item_data']['process_type'] )
-        bruknow_url: str = f'<https://bruknow.library.brown.edu/discovery/fulldisplay?docid=alma{mmsid}&vid=01BU_INST:BROWN>'
-    extracted_data = [ title, barcode, birkin_note, mmsid, holding_id, item_pid, library_info, location_info, base_status_info, process_type_info, bruknow_url ]
-    log.debug( f'extracted_data, ``{pprint.pformat(extracted_data)}``' )
-    assert len(extracted_data) == 11
-    return extracted_data
-    
-
-def stringify_data( data ) -> str:
-    """ Ensures data (in this example sometimes a dict) is returned as a string.
-        Called by extract_data() """
-    if type( data ) != str:
-        data = repr( data )
-    return data
 
 
 def parse_args() -> dict:
