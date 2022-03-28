@@ -1,3 +1,19 @@
+'''
+This script:
+- Takes a filepath and email address
+- Performs GET lookups on the barcodes
+- Constructs a CSV with results
+- Emails the CSV as en attachment
+
+Usage...
+- assumes:
+    - four environmental-variables are set (see below, after logging config)
+- % cd ./annex_eod_alerts_code
+- % source ../env/bin/activate
+- % python3 ./lib/script_file_path_to_csv.py --email the-email-address --file_path /the/path.txt
+'''
+
+
 import argparse, csv, io, logging, os, pathlib, pprint, smtplib
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
