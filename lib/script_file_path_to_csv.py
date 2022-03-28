@@ -98,7 +98,7 @@ def extract_data( barcode: str, item_data: dict ) -> list:
         # if item_data == {}:
         #     birkin_note = 'unable to query barcode'
         if 'errorsExist' in item_data.keys():
-            birkin_note = 'unable to query barcode'
+            birkin_note: str = 'unable to query barcode'
             log.info( f'item_data on extraction-problem, ``{pprint.pformat(item_data)}``' )
         else:
             title: str = item_data['bib_data']['title']  # accessing elements separately so if there's an error, the traceback will show where it occurred
