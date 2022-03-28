@@ -9,7 +9,7 @@ Usage...
     - four environmental-variables are set (see below, after logging config)
 - % cd ./annex_eod_alerts_code
 - % source ../env/bin/activate
-- % python3 ./lib/script_create_monthly_file.py --date 2022-10-01 --source_dir_path /path/to/dir --output_file_path /path/to/file.txt
+- % python3 ./lib/script_create_monthly_file.py --date 2022-10-01 --source_dir_path /path/to/dir --output_dir_path /path/to/dir
 '''
 
 import argparse, datetime, logging, os, pathlib, pprint, time
@@ -24,14 +24,46 @@ log = logging.getLogger(__name__)
 log.debug( 'logging ready' )
 
 
-def manage_monthly_file_creation( date_str: str, source_dir_path: str, output_file_path: str ) -> None:
+def manage_monthly_file_creation( date_str: str, source_dir_path: str, output_dir_path: str ) -> None:
     """ Manages file combining. """
     ## get files in source-dir
     target_files: list = get_target_files( date_str, source_dir_path)
-    qhacs_bucket = []
-    qhref_bucket = []
-    qsacs_bucket = []
-    qsref_bucket = []
+    # qhacs_bucket = []
+    # qhref_bucket = []
+    # qsacs_bucket = []
+    # qsref_bucket = []
+
+    ( qhacs_bucket, qhref_bucket, qsacs_bucket, qsref_bucket ) = ( [], [], [], [] )
+
+    update_buckets( target_files, qhacs_bucket, qhref_bucket, qsacs_bucket, qsref_bucket )
+
+    log.debug( f'len(qhacs_bucket), ``{len(qhacs_bucket)}``' )
+    log.debug( f'len(qhref_bucket), ``{len(qhref_bucket)}``' )
+    log.debug( f'len(qsacs_bucket), ``{len(qsacs_bucket)}``' )
+    log.debug( f'len(qsref_bucket), ``{len(qsref_bucket)}``' )
+
+    date_obj_from_arg  = datetime.datetime.strptime( date_str, '%Y-%m-%d' ).date()
+    buckets = [ qhacs_bucket, qhref_bucket, qsacs_bucket, qsref_bucket ]
+    for i, file_type in enumerate( ['QHACS', 'QHREF', 'QSACS', 'QSREF'] ):
+        output_filename = f'COMBINED_{date_obj_from_arg.year}-{date_obj_from_arg.month}_{file_type}_BARCODES.txt'
+        log.debug( f'output_filename, ``{output_filename}``' )
+        output_filepath = f'{output_dir_path}/{output_filename}'
+        log.debug( f'output_filepath, ``{output_filepath}``' )
+        write_data( output_filepath, buckets[i]  )
+
+    return
+
+    ## end def manage_monthly_file_creation()
+
+
+def write_data( output_filepath: str, bucket: list ) -> None:
+    log.debug( f'output_filepath, ``{output_filepath}``' )
+    with open( output_filepath, 'w' ) as filehandler:
+        filehandler.writelines( bucket )
+    return
+
+
+def update_buckets( target_files: list, qhacs_bucket: list, qhref_bucket: list, qsacs_bucket: list, qsref_bucket: list ):
     for path_obj in target_files:
         contents = []
         # bucket: list = []
@@ -39,26 +71,25 @@ def manage_monthly_file_creation( date_str: str, source_dir_path: str, output_fi
             contents = file_handler.readlines()
         if 'qhacs' in path_obj.name.lower():
             bucket: list = qhacs_bucket
+            output_file_name = f''
         elif 'qhref' in path_obj.name.lower():
             bucket: list = qhref_bucket
         elif 'qsacs' in path_obj.name.lower():
             bucket: list = qsacs_bucket
         else:
             bucket: list = qsref_bucket
-        for entry in contents:
-            barcode = entry.strip()
+        for barcode in contents:
+            # barcode = entry.strip()
             if barcode not in bucket:
                 bucket.append( barcode)
             else:
                 log.debug( f'not adding barcode, ``{barcode}`` it already exists in the target bucket' )
-    log.debug( f'len(qhacs_bucket), ``{len(qhacs_bucket)}``' )
-    log.debug( f'len(qhref_bucket), ``{len(qhref_bucket)}``' )
-    log.debug( f'len(qsacs_bucket), ``{len(qsacs_bucket)}``' )
-    log.debug( f'len(qsref_bucket), ``{len(qsref_bucket)}``' )
+    # log.debug( f'len(qhacs_bucket), ``{len(qhacs_bucket)}``' )
+    # log.debug( f'len(qhref_bucket), ``{len(qhref_bucket)}``' )
+    # log.debug( f'len(qsacs_bucket), ``{len(qsacs_bucket)}``' )
+    # log.debug( f'len(qsref_bucket), ``{len(qsref_bucket)}``' )
 
-    return
-    
-    ## end def manage_monthly_file_creation()
+    ## end def update_buckets()
 
 
 def get_target_files( date_str: str, source_dir_path: str ) -> list:
@@ -102,7 +133,7 @@ def parse_args() -> dict:
     parser = argparse.ArgumentParser( description='Required: email.' )
     parser.add_argument( '--date', '-d', help='date required in the form of 2022-10-01', required=True )
     parser.add_argument( '--source_dir_path', '-s', help='source directory-path required', required=True )
-    parser.add_argument( '--output_file_path', '-o', help='output file-path required', required=True )
+    parser.add_argument( '--output_dir_path', '-o', help='output directory-path required', required=True )
     args: dict = vars( parser.parse_args() )
     return args
 
@@ -112,5 +143,5 @@ if __name__ == '__main__':
     log.debug( f'args, ```{args}```' )
     date_str: str = args['date']
     source_dir_path: str = args['source_dir_path']
-    output_file_path: str = args['output_file_path']
+    output_file_path: str = args['output_dir_path']
     manage_monthly_file_creation( date_str, source_dir_path, output_file_path )
