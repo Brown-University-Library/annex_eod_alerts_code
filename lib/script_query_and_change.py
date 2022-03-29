@@ -62,9 +62,9 @@ def manage_barcode_processing( file_path: str, emails: list ) -> None:
     
     ## iterate through barcodes
     all_extracted_data: list = [
-        ['title', 'barcode', 'birkin_note', 'mmsid', 'holding_id', 'item_pid', 'library_info', 'location_info', 'base_status_info', 'process_type_info', 'bruknow_url']
+        ['title', 'barcode', 'birkin_note', 'library_before', 'library_after', 'location_before', 'location_after', 'base_status_before', 'base_status_after', 'process_type_before', 'process_type_after', 'bruknow_url']
     ] 
-    assert len( all_extracted_data[0] ) == 11
+    assert len( all_extracted_data[0] ) == 12
     for barcode in barcodes:
 
         ## call api
@@ -118,12 +118,19 @@ def extract_data( barcode: str, item_data: dict ) -> list:
         elif 'errorsExist' in item_data.keys():
             birkin_note: str = 'error in query response'
             if 'errorList' in item_data.keys():
+                # log.debug( 'hereA' )
                 if 'error' in item_data['errorList']:
+                    # log.debug( 'hereB' )
                     errors: list = item_data['errorList']['error']
                     for error in errors:
+                        # log.debug( 'hereC' )
                         if 'errorMessage' in error.keys():
-                            if error['errorMessage'] == 'no items found for barcode'.lower():
+                            # log.debug( 'hereD' )
+                            # if error['errorMessage'] == 'no items found for barcode'.lower():
+                            if 'no items found for barcode' in error['errorMessage'].lower():
+                                # log.debug( 'hereE' )
                                 birkin_note = 'no match found for barcode'
+                                break
             log.info( f'item_data on extraction-problem, ``{pprint.pformat(item_data)}``' )
         else:
             title: str = item_data['bib_data']['title']  # accessing elements separately so if there's an error, the traceback will show where it occurred
@@ -193,41 +200,6 @@ def send_mail( file_like_handler, file_name: str, emails: list ) -> None:
     return
 
     ## end def send_mail()
-
-
-# def temp__send_mail( emails: list ) -> None:
-#     """ Tests build of email with a CSV attachment.
-#         Called by manage_csv_email() 
-#         TODO test multiple attachments. """
-#     ## setup
-#     EMAIL_SUBJECT: str = 'The Subject'
-#     # EMAIL_FROM: str = os.environ[ 'ANXEODALERTS__TEST_EMAIL_FROM' ]
-#     EMAIL_FROM: str = 'donotreply_annex-end-of-day-reports@brown.edu'
-#     # EMAIL_TO = os.environ[ 'ANXEODALERTS__TEST_EMAIL_TO_STRING' ]
-#     emails_str: str = ','.join( emails )
-#     EMAIL_TO: str = emails_str
-#     # EMAIL_TO: list = emails
-#     MESSAGE_BODY: str = 'The message body.'
-  
-#     SMTP_SERVER: str = ENVAR_SMTP_HOST
-#     SMTP_PORT: int = int( ENVAR_SMTP_PORT )
-#     ## create multipart message
-#     msg = MIMEMultipart()
-#     # body_part = MIMEText(MESSAGE_BODY, _subtype='plain', _charset='utf-8' )
-#     # body_part = MIMEText(MESSAGE_BODY, _subtype='plain', _charset='ascii' )
-#     msg['Subject'] = EMAIL_SUBJECT
-#     msg['From'] = EMAIL_FROM
-#     msg['To'] = EMAIL_TO
-#     ## add body to email
-#     # msg.attach(body_part)
-#     ## create SMTP object
-#     smtp_obj = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-#     ## send mail
-#     smtp_obj.sendmail( msg['From'], emails, msg.as_string() )
-#     smtp_obj.quit()
-#     return
-
-#     ## end def temp__send_mail()
 
 
 def parse_args() -> dict:
