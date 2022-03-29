@@ -52,27 +52,28 @@ def temp__send_mail( emails: list ) -> None:
     # EMAIL_TO = os.environ[ 'ANXEODALERTS__TEST_EMAIL_TO_STRING' ]
     emails_str: str = ','.join( emails )
     EMAIL_TO: str = emails_str
+    # EMAIL_TO: list = emails
     MESSAGE_BODY: str = 'The message body.'
   
     SMTP_SERVER: str = ENVAR_SMTP_HOST
     SMTP_PORT: int = int( ENVAR_SMTP_PORT )
     ## create multipart message
     msg = MIMEMultipart()
-    body_part = MIMEText(MESSAGE_BODY, _subtype='plain', _charset='utf-8' )
+    # body_part = MIMEText(MESSAGE_BODY, _subtype='plain', _charset='utf-8' )
     # body_part = MIMEText(MESSAGE_BODY, _subtype='plain', _charset='ascii' )
     msg['Subject'] = EMAIL_SUBJECT
     msg['From'] = EMAIL_FROM
     msg['To'] = EMAIL_TO
     ## add body to email
-    msg.attach(body_part)
+    # msg.attach(body_part)
     ## create SMTP object
     smtp_obj = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
     ## send mail
-    smtp_obj.sendmail( msg['From'], msg['To'], msg.as_string() )
+    smtp_obj.sendmail( msg['From'], emails, msg.as_string() )
     smtp_obj.quit()
     return
 
-    ## end def send_mail()
+    ## end def temp__send_mail()
 
 
 
