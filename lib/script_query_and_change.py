@@ -119,8 +119,8 @@ def extract_data( barcode: str, item_data: dict ) -> list:
             birkin_note: str = 'error in query response'
             if 'errorList' in item_data.keys():
                 if 'error' in item_data['errorList']:
-                    errors: list = item_data['errorList']['error']:
-                    for error: dct in errors:
+                    errors: list = item_data['errorList']['error']
+                    for error in errors:
                         if 'errorMessage' in error.keys():
                             if error['errorMessage'] == 'no items found for barcode'.lower():
                                 birkin_note = 'no match found for barcode'
@@ -137,7 +137,7 @@ def extract_data( barcode: str, item_data: dict ) -> list:
             base_status_info: str = stringify_data( item_data['item_data']['base_status'] )
             process_type_info: str = stringify_data( item_data['item_data']['process_type'] )
             bruknow_url: str = f'<https://bruknow.library.brown.edu/discovery/fulldisplay?docid=alma{mmsid}&vid=01BU_INST:BROWN>'
-        extracted_data = [ title, barcode, birkin_note, mmsid, holding_id, item_pid, library_info, location_info, base_status_info, process_type_info, bruknow_url ]
+        extracted_data = [ title, barcode, birkin_note, library_before, library_after, location_before, location_after, base_status_before, base_status_after, process_type_before, process_type_after, bruknow_url ]
     except Exception as e:
         log.exception( f'problem extracting data from item_data, ``{pprint.pformat(item_data)}``' )
         raise Exception( 'problem extracting data; see logs' )
