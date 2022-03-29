@@ -142,7 +142,7 @@ def extract_data( barcode: str, item_data: dict ) -> list:
         log.exception( f'problem extracting data from item_data, ``{pprint.pformat(item_data)}``' )
         raise Exception( 'problem extracting data; see logs' )
     log.debug( f'extracted_data, ``{pprint.pformat(extracted_data)}``' )
-    assert len(extracted_data) == 11
+    assert len(extracted_data) == 12
     return extracted_data
     
 
