@@ -139,10 +139,10 @@ def extract_data( barcode: str, item_data: dict ) -> list:
             mmsid: str = stringify_data( item_data['bib_data']['mms_id'] ) 
             holding_id: str = stringify_data( item_data['holding_data']['holding_id'] )
             item_pid: str = stringify_data( item_data['item_data']['pid'] )
-            library_info: str = stringify_data( item_data['item_data']['library'] )
-            location_info: str = stringify_data( item_data['item_data']['location'] )
-            base_status_info: str = stringify_data( item_data['item_data']['base_status'] )
-            process_type_info: str = stringify_data( item_data['item_data']['process_type'] )
+            library_before: str = stringify_data( item_data['item_data']['library'] )
+            location_before: str = stringify_data( item_data['item_data']['location'] )
+            base_status_before: str = stringify_data( item_data['item_data']['base_status'] )
+            process_type_before: str = stringify_data( item_data['item_data']['process_type'] )
             bruknow_url: str = f'<https://bruknow.library.brown.edu/discovery/fulldisplay?docid=alma{mmsid}&vid=01BU_INST:BROWN>'
         extracted_data = [ title, barcode, birkin_note, library_before, library_after, location_before, location_after, base_status_before, base_status_after, process_type_before, process_type_after, bruknow_url ]
     except Exception as e:
