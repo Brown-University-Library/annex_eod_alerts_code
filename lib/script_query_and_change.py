@@ -124,19 +124,33 @@ def evaluate_data( file_type: str, item_data: dict ) -> dict:
     """ Evaluates existing item_data, updates item_data REFERENCE, for CSV, _and_ returns update payload-dict. 
         Called by manage_barcode_processing() 
         Based on March 25, 2022 email logic. """
-    ## setup --------------------------------------------------------
     log.debug( f'item_data at beginning of evaluate, ``{pprint.pformat(item_data)}``' )
+    ## check for no-barcode-found -----------------------------------
+
+    if 'errorList' in item_data.keys():
+        # log.debug( 'hereA' )
+        if 'error' in item_data['errorList']:
+            # log.debug( 'hereB' )
+            errors: list = item_data['errorList']['error']
+            for error in errors:
+                # log.debug( 'hereC' )
+                if 'errorMessage' in error.keys():
+                    # log.debug( 'hereD' )
+                    # if error['errorMessage'] == 'no items found for barcode'.lower():
+                    if 'no items found for barcode' in error['errorMessage'].lower():
+                        # log.debug( 'hereE' )
+                        return {}
+                        
+    ## setup --------------------------------------------------------
     # payload_data: dict = item_data.copy()  # copy of GET response
     # payload_data_reference: dict = item_data.copy()  # to see if there are any updates to perform
-
     payload_data: dict = copy.deepcopy( item_data )
     payload_data_reference: dict = copy.deepcopy( item_data )
-
     assert payload_data == payload_data_reference
     item_data['item_data']['library_eval'] = 'no-change'
     item_data['item_data']['location_eval'] = 'no-change'
     item_data['item_data']['base_status_eval'] = 'no-change'
-    item_data['item_data']['process_type_eval'] = 'no-change'
+    item_data['item_data']['process_type_eval'] = 'no-change'    
     ## handle process_type ------------------------------------------
     continue_after_process_type_flag: bool = False
     process_type: dict = item_data['item_data']['process_type']
