@@ -237,7 +237,7 @@ def extract_data( barcode: str, item_data: dict, updated_item_data: dict ) -> li
             ##
             location_before: str = stringify_data( item_data['item_data']['location'] )
             location_todo: str = item_data['item_data']['location_eval']
-            library_after: str = stringify_data( updated_item_data['item_data']['location'] ) if updated_item_data else 'not-yet-implemented'
+            location_after: str = stringify_data( updated_item_data['item_data']['location'] ) if updated_item_data else 'not-yet-implemented'
             ##
             base_status_before: str = stringify_data( item_data['item_data']['base_status'] )
             base_status_todo: str = item_data['item_data']['base_status_eval']
