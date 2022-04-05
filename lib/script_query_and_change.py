@@ -138,14 +138,18 @@ def evaluate_data( file_type: str, item_data: dict ) -> dict:
     item_data['item_data']['base_status_eval'] = 'no-change'
     item_data['item_data']['process_type_eval'] = 'no-change'
     ## handle process_type ------------------------------------------
+    continue_after_process_type_flag: bool = False
     process_type: dict = item_data['item_data']['process_type']
     log.debug( f'process_type for evaluation, ``{process_type}``' )
     if process_type == {'desc': 'Technical - Migration', 'value': 'TECHNICAL' }:
         log.debug( 'found "technical" process_type info' )
         payload_data['item_data']['process_type'] = {'desc': None, 'value': ''}
         item_data['item_data']['process_type_eval'] = "should change to ``{'desc': None, 'value': ''}``"
+        continue_after_process_type_flag = True
     elif process_type == {'desc': None, 'value': '' }:
         log.debug( 'found None process_type info, so continuing' )
+        continue_after_process_type_flag = True
+    if continue_after_process_type_flag == True:
         ## handle base_status ---------------------------------------
         base_status_ideal: dict = {'desc': 'Item in place', 'value': '1'}
         if item_data['item_data']['base_status'] != base_status_ideal:
