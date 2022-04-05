@@ -46,6 +46,9 @@ def manage_barcode_processing( file_path: str, emails: list ) -> None:
     file_name: str = path_obj.name
     log.debug( f'file_name, ``{file_name}``' )
 
+    ## get file_type ------------------------------------------------
+    file_type: str = determine_file_type( file_name )
+
     ## read barcodes ------------------------------------------------
     barcodes: list = []
     with open( file_path, 'r' ) as fh:
@@ -67,7 +70,7 @@ def manage_barcode_processing( file_path: str, emails: list ) -> None:
     assert len( all_extracted_data[0] ) == 12
     for barcode in barcodes:
 
-        ## call api
+        ## call api -------------------------------------------------
         url_data: dict = prepare_api_url( barcode )
         item_data: dict = {}
         try:
@@ -77,9 +80,13 @@ def manage_barcode_processing( file_path: str, emails: list ) -> None:
         except Exception as e:
             log.exception( 'problem accessing barcode, ``{barcode}``')
 
-        ## extract data elements
-        extracted_data: list = extract_data( barcode, item_data )
-        all_extracted_data.append( extracted_data )  # type: ignore
+        ## evaluate data --------------------------------------------
+        evaluated_data: dict = evaluate_data( file_type, item_data )
+
+        ## extract data elements ------------------------------------
+        # extracted_data: list = extract_data( barcode, item_data )
+
+        # all_extracted_data.append( extracted_data )  # type: ignore
         # log.debug( f'all_extracted_data (in-process), ``{pprint.pformat(all_extracted_data)}``' )
 
     ## create csv from extracted_data
@@ -93,6 +100,41 @@ def manage_barcode_processing( file_path: str, emails: list ) -> None:
     return
 
     ## end def manage_barcode_processing()
+
+
+# -------------------------------------------------------------------
+# helper functions
+# -------------------------------------------------------------------
+
+
+def evaluate_data( file_type: str, item_data: dict ) -> dict:
+    """ Evaluates existing item_data and updates it. 
+        Called by manage_barcode_processing() 
+        Based on March 25, 2022 email logic. """
+    ## setup --------------------------------------------------------
+    changes_made: bool = False
+    updated_data: dict = item_data.copy()  # copy of GET response
+    ## handle process_type ------------------------------------------
+    process_type: dict = item_data['item_data']['process_type']
+    if process_type['desc'].lower().strip() == 'technical - migration':
+        if process_type['value'].lower().strip() == 'technical':
+            updated_data['item_data']['process_type']['desc'] = None
+            updated_dataZZZ
+
+    if file_type == 'QHACS':
+
+
+
+def determine_file_type( file_name: str ) -> str:
+    """ Returns the file_type from inspecting the file-name. 
+        Called by: manage_barcode_processing() """
+    file_type: str = 'init'
+    for type in [ 'QHACS', 'QHREF', 'QSACS', 'QSREF' ]:
+        if type in file_name:
+            file_type = type
+            break
+    log.debug( f'file_type, ``{file_type}``' )
+    return file_type
 
 
 def prepare_api_url( barcode: str ) -> dict:
