@@ -15,7 +15,7 @@ Usage...
 - % python3 ./lib/script_file_path_to_csv.py --email the-email-address --file_path /the/path.txt
 '''
 
-import argparse, csv, io, logging, os, pathlib, pprint, smtplib
+import argparse, copy, csv, io, logging, os, pathlib, pprint, smtplib
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -125,8 +125,13 @@ def evaluate_data( file_type: str, item_data: dict ) -> dict:
         Called by manage_barcode_processing() 
         Based on March 25, 2022 email logic. """
     ## setup --------------------------------------------------------
-    payload_data: dict = item_data.copy()  # copy of GET response
-    payload_data_reference: dict = item_data.copy()  # to see if there are any updates to perform
+    log.debug( f'item_data at beginning of evaluate, ``{pprint.pformat(item_data)}``' )
+    # payload_data: dict = item_data.copy()  # copy of GET response
+    # payload_data_reference: dict = item_data.copy()  # to see if there are any updates to perform
+
+    payload_data: dict = copy.deepcopy( item_data )
+    payload_data_reference: dict = copy.deepcopy( item_data )
+
     assert payload_data == payload_data_reference
     item_data['item_data']['library_eval'] = 'no-change'
     item_data['item_data']['location_eval'] = 'no-change'
@@ -134,10 +139,13 @@ def evaluate_data( file_type: str, item_data: dict ) -> dict:
     item_data['item_data']['process_type_eval'] = 'no-change'
     ## handle process_type ------------------------------------------
     process_type: dict = item_data['item_data']['process_type']
+    log.debug( f'process_type for evaluation, ``{process_type}``' )
     if process_type == {'desc': 'Technical - Migration', 'value': 'TECHNICAL' }:
+        log.debug( 'found "technical" process_type info' )
         payload_data['item_data']['process_type'] = {'desc': None, 'value': ''}
         item_data['item_data']['process_type_eval'] = "should change to ``{'desc': None, 'value': ''}``"
     elif process_type == {'desc': None, 'value': '' }:
+        log.debug( 'found None process_type info, so continuing' )
         ## handle base_status ---------------------------------------
         payload_data['item_data']['base_status'] = {'desc': 'Item in place', 'value': '1'}
         item_data['item_data']['base_status_eval'] = "should change to ``{'desc': 'Item in place', 'value': '1'}``"
@@ -162,6 +170,7 @@ def evaluate_data( file_type: str, item_data: dict ) -> dict:
     ## see if payload_data has been updated -------------------------
     if payload_data == payload_data_reference:  # no change, so let's return a form of None
         payload_data = {}
+    log.debug( f'item_data at END of evaluate, ``{pprint.pformat(item_data)}``' )
     return payload_data
 
 
@@ -224,19 +233,19 @@ def extract_data( barcode: str, item_data: dict, updated_item_data: dict ) -> li
             ##
             library_before: str = stringify_data( item_data['item_data']['library'] )
             library_todo: str = item_data['item_data']['library_eval']
-            library_after: str = stringify_data( updated_item_data['item_data']['library'] ) if updated_item_data else 'no-change'
+            library_after: str = stringify_data( updated_item_data['item_data']['library'] ) if updated_item_data else 'not-yet-implemented'
             ##
             location_before: str = stringify_data( item_data['item_data']['location'] )
             location_todo: str = item_data['item_data']['location_eval']
-            library_after: str = stringify_data( updated_item_data['item_data']['location'] ) if updated_item_data else 'no-change'
+            library_after: str = stringify_data( updated_item_data['item_data']['location'] ) if updated_item_data else 'not-yet-implemented'
             ##
             base_status_before: str = stringify_data( item_data['item_data']['base_status'] )
             base_status_todo: str = item_data['item_data']['base_status_eval']
-            base_status_after: str = stringify_data( updated_item_data['item_data']['base_status'] ) if updated_item_data else 'no-change'
+            base_status_after: str = stringify_data( updated_item_data['item_data']['base_status'] ) if updated_item_data else 'not-yet-implemented'
             ##
             process_type_before: str = stringify_data( item_data['item_data']['process_type'] )
             process_type_todo: str = item_data['item_data']['process_type_eval']
-            process_type_after: str = stringify_data( updated_item_data['item_data']['process_type'] ) if updated_item_data else 'no-change'
+            process_type_after: str = stringify_data( updated_item_data['item_data']['process_type'] ) if updated_item_data else 'not-yet-implemented'
             ##
             bruknow_url: str = f'<https://bruknow.library.brown.edu/discovery/fulldisplay?docid=alma{mmsid}&vid=01BU_INST:BROWN>'
         extracted_data = [ title, barcode, birkin_note, library_before, library_todo, library_after, location_before, location_todo, location_after, base_status_before, base_status_todo, base_status_after, process_type_before, process_type_todo, process_type_after, bruknow_url ]
