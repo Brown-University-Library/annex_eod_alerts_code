@@ -16,8 +16,6 @@ Usage...
 '''
 
 import argparse, csv, io, logging, os, pathlib, pprint, smtplib
-from logging.config import _LoggerConfiguration
-from dbm.ndbm import library
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -246,7 +244,7 @@ def extract_data( barcode: str, item_data: dict, updated_item_data: dict ) -> li
         log.exception( f'problem extracting data from item_data, ``{pprint.pformat(item_data)}``' )
         raise Exception( 'problem extracting data; see logs' )
     log.debug( f'extracted_data, ``{pprint.pformat(extracted_data)}``' )
-    assert len(extracted_data) == 12
+    assert len(extracted_data) == 16
     return extracted_data
     
 
