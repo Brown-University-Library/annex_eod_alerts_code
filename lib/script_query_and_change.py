@@ -147,8 +147,10 @@ def evaluate_data( file_type: str, item_data: dict ) -> dict:
     elif process_type == {'desc': None, 'value': '' }:
         log.debug( 'found None process_type info, so continuing' )
         ## handle base_status ---------------------------------------
-        payload_data['item_data']['base_status'] = {'desc': 'Item in place', 'value': '1'}
-        item_data['item_data']['base_status_eval'] = "should change to ``{'desc': 'Item in place', 'value': '1'}``"
+        base_status_ideal: dict = {'desc': 'Item in place', 'value': '1'}
+        if item_data['item_data']['base_status'] != base_status_ideal:
+            payload_data['item_data']['base_status'] = base_status_ideal
+            item_data['item_data']['base_status_eval'] = f'should change to ``{base_status_ideal}``'
         ## handle library ------------------------------------------
         library_ideal: dict = {}
         if file_type == 'QHACS' or file_type == 'QHREF':
