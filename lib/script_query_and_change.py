@@ -65,9 +65,9 @@ def manage_barcode_processing( file_path: str, emails: list ) -> None:
     
     ## iterate through barcodes
     all_extracted_data: list = [
-        ['title', 'barcode', 'birkin_note', 'library_before', 'library_after', 'location_before', 'location_after', 'base_status_before', 'base_status_after', 'process_type_before', 'process_type_after', 'bruknow_url']
+        ['title', 'barcode', 'birkin_note', 'library_before', 'library_todo', 'library_after', 'location_before', 'location_todo', 'location_after', 'base_status_before', 'base_status_todo', 'base_status_after', 'process_type_before', 'process_type_todo', 'process_type_after', 'bruknow_url']
     ] 
-    assert len( all_extracted_data[0] ) == 12
+    assert len( all_extracted_data[0] ) == 16
     for barcode in barcodes:
 
         ## call api -------------------------------------------------
