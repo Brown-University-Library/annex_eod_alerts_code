@@ -153,7 +153,7 @@ def evaluate_data( file_type: str, item_data: dict ) -> dict:
         ## handle location ------------------------------------------
         location_ideal: dict = {}
         if file_type == 'QHACS' or file_type == 'QHREF':
-            location_ideal: dict = {'desc': 'John Hay Library', 'value': 'HAY'}
+            location_ideal: dict = {'desc': 'Annex Hay', 'value': 'HAYSTOR'}
         elif file_type == 'QSACS' or file_type == 'QSREF':
             location_ideal: dict = { 'desc': 'Annex Storage', 'value': 'RKSTORAGE' }
         if item_data['item_data']['location'] != location_ideal:
