@@ -92,7 +92,7 @@ def manage_barcode_processing( file_path: str, emails: list ) -> None:
         # extracted_data: list = extract_data( barcode, item_data )
         extracted_data: list = extract_data( barcode, item_data, updated_item_data )
 
-        # all_extracted_data.append( extracted_data )  # type: ignore
+        all_extracted_data.append( extracted_data )  # type: ignore
         log.debug( f'all_extracted_data (in-process), ``{pprint.pformat(all_extracted_data)}``' )
 
     ## create csv from extracted_data
