@@ -16,6 +16,8 @@ Usage...
 '''
 
 import argparse, csv, io, logging, os, pathlib, pprint, smtplib
+from logging.config import _LoggerConfiguration
+from dbm.ndbm import library
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -47,7 +49,7 @@ def manage_barcode_processing( file_path: str, emails: list ) -> None:
     log.debug( f'file_name, ``{file_name}``' )
 
     ## get file_type ------------------------------------------------
-    file_type: str = determine_file_type( file_name )
+    file_type: str = determine_file_type( file_name )  # used when evaluating GET data
 
     ## read barcodes ------------------------------------------------
     barcodes: list = []
@@ -81,13 +83,19 @@ def manage_barcode_processing( file_path: str, emails: list ) -> None:
             log.exception( 'problem accessing barcode, ``{barcode}``')
 
         ## evaluate data --------------------------------------------
-        evaluated_data: dict = evaluate_data( file_type, item_data )
+        payload_data: dict = evaluate_data( file_type, item_data )
+
+        ## try update if needed -------------------------------------
+        updated_item_data: dict = {}
+        if payload_data:
+            updated_item_data = try_update( payload_data )
 
         ## extract data elements ------------------------------------
         # extracted_data: list = extract_data( barcode, item_data )
+        extracted_data: list = extract_data( barcode, item_data, updated_item_data )
 
         # all_extracted_data.append( extracted_data )  # type: ignore
-        # log.debug( f'all_extracted_data (in-process), ``{pprint.pformat(all_extracted_data)}``' )
+        log.debug( f'all_extracted_data (in-process), ``{pprint.pformat(all_extracted_data)}``' )
 
     ## create csv from extracted_data
     log.debug( f'all_extracted_data (FINAL), ``{pprint.pformat(all_extracted_data)}``' )
@@ -107,22 +115,56 @@ def manage_barcode_processing( file_path: str, emails: list ) -> None:
 # -------------------------------------------------------------------
 
 
+def try_update( payload_data: dict ) -> dict:
+    """ Will try update here.
+        Called by manage_barcode_processing() """
+    log.debug( 'will try PUT here' )
+    return {}
+
+
 def evaluate_data( file_type: str, item_data: dict ) -> dict:
-    """ Evaluates existing item_data and updates it. 
+    """ Evaluates existing item_data, updates item_data REFERENCE, for CSV, _and_ returns update payload-dict. 
         Called by manage_barcode_processing() 
         Based on March 25, 2022 email logic. """
     ## setup --------------------------------------------------------
-    changes_made: bool = False
-    updated_data: dict = item_data.copy()  # copy of GET response
+    payload_data: dict = item_data.copy()  # copy of GET response
+    payload_data_reference: dict = item_data.copy()  # to see if there are any updates to perform
+    assert payload_data == payload_data_reference
+    item_data['item_data']['library_eval'] = 'no-change'
+    item_data['item_data']['location_eval'] = 'no-change'
+    item_data['item_data']['base_status_eval'] = 'no-change'
+    item_data['item_data']['process_type_eval'] = 'no-change'
     ## handle process_type ------------------------------------------
     process_type: dict = item_data['item_data']['process_type']
-    if process_type['desc'].lower().strip() == 'technical - migration':
-        if process_type['value'].lower().strip() == 'technical':
-            updated_data['item_data']['process_type']['desc'] = None
-            updated_dataZZZ
-
-    if file_type == 'QHACS':
-
+    if process_type == {'desc': 'Technical - Migration', 'value': 'TECHNICAL' }:
+        payload_data['item_data']['process_type'] = {'desc': None, 'value': ''}
+        item_data['item_data']['process_type_eval'] = "should change to ``{'desc': None, 'value': ''}``"
+    elif process_type == {'desc': None, 'value': '' }:
+        ## handle base_status ---------------------------------------
+        payload_data['item_data']['base_status'] = {'desc': 'Item in place', 'value': '1'}
+        item_data['item_data']['base_status_eval'] = "should change to ``{'desc': 'Item in place', 'value': '1'}``"
+        ## handle library ------------------------------------------
+        library_ideal: dict = {}
+        if file_type == 'QHACS' or file_type == 'QHREF':
+            library_ideal: dict = {'desc': 'John Hay Library', 'value': 'HAY'}
+        elif file_type == 'QSACS' or file_type == 'QSREF':
+            library_ideal: dict = {'desc': 'Rockefeller Library', 'value': 'ROCK'}
+        if item_data['item_data']['library'] != library_ideal:
+            payload_data['item_data']['library'] = library_ideal
+            item_data['item_data']['library_eval'] = f'should change to ``{library_ideal}``'
+        ## handle location ------------------------------------------
+        location_ideal: dict = {}
+        if file_type == 'QHACS' or file_type == 'QHREF':
+            location_ideal: dict = {'desc': 'John Hay Library', 'value': 'HAY'}
+        elif file_type == 'QSACS' or file_type == 'QSREF':
+            location_ideal: dict = { 'desc': 'Annex Storage', 'value': 'RKSTORAGE' }
+        if item_data['item_data']['location'] != location_ideal:
+            payload_data['item_data']['location'] = location_ideal
+            item_data['item_data']['location_eval'] = f'should change to ``{location_ideal}``'
+    ## see if payload_data has been updated -------------------------
+    if payload_data == payload_data_reference:  # no change, so let's return a form of None
+        payload_data = {}
+    return payload_data
 
 
 def determine_file_type( file_name: str ) -> str:
@@ -147,14 +189,14 @@ def prepare_api_url( barcode: str ) -> dict:
     return url_data
 
 
-def extract_data( barcode: str, item_data: dict ) -> list:
+def extract_data( barcode: str, item_data: dict, updated_item_data: dict ) -> list:
     """ Returns data-elements for the CSV from either:
         - populated api item_data
         - or, on unsuccessful api-call, just the barcode and note
         """
     try:
         ## initialize vars
-        ( title, barcode, birkin_note, library_before, library_after, location_before, location_after, base_status_before, base_status_after, process_type_before, process_type_after, bruknow_url ) = ( '', barcode, '', '', '', '', '', '', '', '', '', '' )
+        ( title, barcode, birkin_note, library_before, library_todo, library_after, location_before, location_todo, location_after, base_status_before, base_status_todo, base_status_after, process_type_before, process_type_todo, process_type_after, bruknow_url ) = ( '', barcode, '', '', '', '', '', '', '', '', '', '', '', '', '', '' )
         if item_data == {}:
             birkin_note: str = 'could not query barcode'
         elif 'errorsExist' in item_data.keys():
@@ -181,12 +223,25 @@ def extract_data( barcode: str, item_data: dict ) -> list:
             mmsid: str = stringify_data( item_data['bib_data']['mms_id'] ) 
             holding_id: str = stringify_data( item_data['holding_data']['holding_id'] )
             item_pid: str = stringify_data( item_data['item_data']['pid'] )
+            ##
             library_before: str = stringify_data( item_data['item_data']['library'] )
+            library_todo: str = item_data['item_data']['library_eval']
+            library_after: str = stringify_data( updated_item_data['item_data']['library'] ) if updated_item_data else 'no-change'
+            ##
             location_before: str = stringify_data( item_data['item_data']['location'] )
+            location_todo: str = item_data['item_data']['location_eval']
+            library_after: str = stringify_data( updated_item_data['item_data']['location'] ) if updated_item_data else 'no-change'
+            ##
             base_status_before: str = stringify_data( item_data['item_data']['base_status'] )
+            base_status_todo: str = item_data['item_data']['base_status_eval']
+            base_status_after: str = stringify_data( updated_item_data['item_data']['base_status'] ) if updated_item_data else 'no-change'
+            ##
             process_type_before: str = stringify_data( item_data['item_data']['process_type'] )
+            process_type_todo: str = item_data['item_data']['process_type_eval']
+            process_type_after: str = stringify_data( updated_item_data['item_data']['process_type'] ) if updated_item_data else 'no-change'
+            ##
             bruknow_url: str = f'<https://bruknow.library.brown.edu/discovery/fulldisplay?docid=alma{mmsid}&vid=01BU_INST:BROWN>'
-        extracted_data = [ title, barcode, birkin_note, library_before, library_after, location_before, location_after, base_status_before, base_status_after, process_type_before, process_type_after, bruknow_url ]
+        extracted_data = [ title, barcode, birkin_note, library_before, library_todo, library_after, location_before, location_todo, location_after, base_status_before, base_status_todo, base_status_after, process_type_before, process_type_todo, process_type_after, bruknow_url ]
     except Exception as e:
         log.exception( f'problem extracting data from item_data, ``{pprint.pformat(item_data)}``' )
         raise Exception( 'problem extracting data; see logs' )
