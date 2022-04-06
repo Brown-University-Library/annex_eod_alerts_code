@@ -74,7 +74,7 @@ def manage_barcode_processing( file_path: str, emails: list ) -> None:
         url_data: dict = prepare_api_url( barcode )
         item_data: dict = {}
         try:
-            r = requests.get( url_data['api_url'], headers=url_data['headers'] )
+            r = requests.get( url_data['api_url'], headers=url_data['headers'], timeout=20 )
             item_data = r.json()
             log.debug( f'returned-get-api data, ``{pprint.pformat(item_data)}``' )
         except Exception as e:
@@ -126,10 +126,14 @@ def try_update( payload_data: dict ) -> dict:
     put_url = f'{put_url_base}?generate_description=false&apikey={ENVAR_API_KEY}'
     # log.debug( f'put_url, ``{put_url}``' )
     header_dct = {'Accept': 'application/json', 'Content-Type': 'application/json'}  # 'Content-Type' not needed for GET
-    r = requests.put( put_url, json=payload_data, headers=header_dct, timeout=10 )
-    ## inspect result -----------------------------------------------
-    # log.debug( f' r.content, ``{r.content}``')
-    returned_put_data: dict = r.json()
+    returned_put_data: dict = {}
+    try:
+        r = requests.put( put_url, json=payload_data, headers=header_dct, timeout=20 )
+        ## inspect result -----------------------------------------------
+        # log.debug( f' r.content, ``{r.content}``')
+        returned_put_data: dict = r.json()
+    except Exception as e:
+        log.exception( f'Problem on PUT, ``{repr(e)}``' )
     log.debug( f'returned_put_data, ``{pprint.pformat(returned_put_data)}``' )
     return returned_put_data
 
