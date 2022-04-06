@@ -89,7 +89,6 @@ def manage_barcode_processing( file_path: str, emails: list ) -> None:
             updated_item_data = try_update( payload_data )
 
         ## extract data elements ------------------------------------
-        # extracted_data: list = extract_data( barcode, item_data )
         extracted_data: list = extract_data( barcode, item_data, updated_item_data )
 
         all_extracted_data.append( extracted_data )  # type: ignore
@@ -116,8 +115,23 @@ def manage_barcode_processing( file_path: str, emails: list ) -> None:
 def try_update( payload_data: dict ) -> dict:
     """ Will try update here.
         Called by manage_barcode_processing() """
-    log.debug( 'will try PUT here' )
-    return {}
+    log.debug( 'about to try PUT...' )
+    log.debug( f'payload_data, ``{pprint.pformat(payload_data)}``' )
+    ## setup --------------------------------------------------------
+    mmsid: str = stringify_data( payload_data['bib_data']['mms_id'] ) 
+    holding_id: str = stringify_data( payload_data['holding_data']['holding_id'] )
+    item_pid: str = stringify_data( payload_data['item_data']['pid'] )
+    ## call item-put api --------------------------------------------
+    put_url_base = ENVAR_ITEM_PUT_URL_ROOT.replace( '{MMSID}', mmsid ).replace( '{HOLDING_ID}', holding_id ).replace( '{ITEM_PID}', item_pid )
+    put_url = f'{put_url_base}?generate_description=false&apikey={ENVAR_API_KEY}'
+    # log.debug( f'put_url, ``{put_url}``' )
+    header_dct = {'Accept': 'application/json', 'Content-Type': 'application/json'}  # 'Content-Type' not needed for GET
+    r = requests.put( put_url, json=payload_data, headers=header_dct, timeout=10 )
+    ## inspect result -----------------------------------------------
+    # log.debug( f' r.content, ``{r.content}``')
+    returned_put_data: dict = r.json()
+    log.debug( f'returned_put_data, ``{pprint.pformat(returned_put_data)}``' )
+    return returned_put_data
 
 
 def evaluate_data( file_type: str, item_data: dict ) -> dict:
@@ -189,7 +203,10 @@ def evaluate_data( file_type: str, item_data: dict ) -> dict:
             item_data['item_data']['location_eval'] = f'should change to ``{location_ideal}``'
     ## see if payload_data has been updated -------------------------
     if payload_data == payload_data_reference:  # no change, so let's return a form of None
+        log.debug( 'no changes made, so returning empty payload' )
         payload_data = {}
+    else:
+        log.debug( 'payload updated' )
     log.debug( f'item_data at END of evaluate, ``{pprint.pformat(item_data)}``' )
     return payload_data
 
@@ -253,19 +270,19 @@ def extract_data( barcode: str, item_data: dict, updated_item_data: dict ) -> li
             ##
             library_before: str = stringify_data( item_data['item_data']['library'] )
             library_todo: str = item_data['item_data']['library_eval']
-            library_after: str = stringify_data( updated_item_data['item_data']['library'] ) if updated_item_data else 'not-yet-implemented'
+            library_after: str = stringify_data( updated_item_data['item_data']['library'] ) if updated_item_data else 'no-change-made'
             ##
             location_before: str = stringify_data( item_data['item_data']['location'] )
             location_todo: str = item_data['item_data']['location_eval']
-            location_after: str = stringify_data( updated_item_data['item_data']['location'] ) if updated_item_data else 'not-yet-implemented'
+            location_after: str = stringify_data( updated_item_data['item_data']['location'] ) if updated_item_data else 'no-change-made'
             ##
             base_status_before: str = stringify_data( item_data['item_data']['base_status'] )
             base_status_todo: str = item_data['item_data']['base_status_eval']
-            base_status_after: str = stringify_data( updated_item_data['item_data']['base_status'] ) if updated_item_data else 'not-yet-implemented'
+            base_status_after: str = stringify_data( updated_item_data['item_data']['base_status'] ) if updated_item_data else 'no-change-made'
             ##
             process_type_before: str = stringify_data( item_data['item_data']['process_type'] )
             process_type_todo: str = item_data['item_data']['process_type_eval']
-            process_type_after: str = stringify_data( updated_item_data['item_data']['process_type'] ) if updated_item_data else 'not-yet-implemented'
+            process_type_after: str = stringify_data( updated_item_data['item_data']['process_type'] ) if updated_item_data else 'no-change-made'
             ##
             bruknow_url: str = f'<https://bruknow.library.brown.edu/discovery/fulldisplay?docid=alma{mmsid}&vid=01BU_INST:BROWN>'
         extracted_data = [ title, barcode, birkin_note, library_before, library_todo, library_after, location_before, location_todo, location_after, base_status_before, base_status_todo, base_status_after, process_type_before, process_type_todo, process_type_after, bruknow_url ]
