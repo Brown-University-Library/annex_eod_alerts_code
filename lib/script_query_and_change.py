@@ -270,8 +270,6 @@ def extract_data( barcode: str, item_data: dict, updated_item_data: dict ) -> li
                                 birkin_note = f'update-error-response, ``{err_msg}``' 
                                 break
             log.info( f'item_data on extraction-problem, ``{pprint.pformat(item_data)}``' )
-        elif updated_item_data == {}:
-            birkin_note: str = 'problem handling update response'
         elif 'errorsExist' in updated_item_data.keys():
             birkin_note: str = f'update error-response, ``{repr(updated_item_data)}``'
         else:  ## all should be good
