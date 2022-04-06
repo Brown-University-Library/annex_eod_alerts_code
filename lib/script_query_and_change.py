@@ -270,19 +270,31 @@ def extract_data( barcode: str, item_data: dict, updated_item_data: dict ) -> li
             ##
             library_before: str = stringify_data( item_data['item_data']['library'] )
             library_todo: str = item_data['item_data']['library_eval']
-            library_after: str = stringify_data( updated_item_data['item_data']['library'] ) if updated_item_data else 'no-change-made'
+            library_after: str = 'no-change-made'
+            if updated_item_data:
+                if updated_item_data['item_data']['library'] != item_data['item_data']['library']:
+                    library_after = stringify_data( updated_item_data['item_data']['library'] )
             ##
             location_before: str = stringify_data( item_data['item_data']['location'] )
             location_todo: str = item_data['item_data']['location_eval']
-            location_after: str = stringify_data( updated_item_data['item_data']['location'] ) if updated_item_data else 'no-change-made'
+            location_after: str = 'no-change-made'
+            if updated_item_data:
+                if updated_item_data['item_data']['location'] != item_data['item_data']['location']:
+                    location_after = stringify_data( updated_item_data['item_data']['location'] )
             ##
             base_status_before: str = stringify_data( item_data['item_data']['base_status'] )
             base_status_todo: str = item_data['item_data']['base_status_eval']
-            base_status_after: str = stringify_data( updated_item_data['item_data']['base_status'] ) if updated_item_data else 'no-change-made'
+            base_status_after: str = 'no-change-made'
+            if updated_item_data:
+                if updated_item_data['item_data']['base_status'] != item_data['item_data']['base_status']:
+                    base_status_after = stringify_data( updated_item_data['item_data']['base_status'] )
             ##
             process_type_before: str = stringify_data( item_data['item_data']['process_type'] )
             process_type_todo: str = item_data['item_data']['process_type_eval']
-            process_type_after: str = stringify_data( updated_item_data['item_data']['process_type'] ) if updated_item_data else 'no-change-made'
+            process_type_after: str = 'no-change-made'
+            if updated_item_data:
+                if updated_item_data['item_data']['process_type'] != item_data['item_data']['process_type']:
+                    process_type_after = stringify_data( updated_item_data['item_data']['process_type'] )
             ##
             bruknow_url: str = f'<https://bruknow.library.brown.edu/discovery/fulldisplay?docid=alma{mmsid}&vid=01BU_INST:BROWN>'
         extracted_data = [ title, barcode, birkin_note, library_before, library_todo, library_after, location_before, location_todo, location_after, base_status_before, base_status_todo, base_status_after, process_type_before, process_type_todo, process_type_after, bruknow_url ]
@@ -292,6 +304,71 @@ def extract_data( barcode: str, item_data: dict, updated_item_data: dict ) -> li
     log.debug( f'extracted_data, ``{pprint.pformat(extracted_data)}``' )
     assert len(extracted_data) == 16
     return extracted_data
+
+    ## end def extract_data()
+
+
+# def extract_data( barcode: str, item_data: dict, updated_item_data: dict ) -> list:
+#     """ Returns data-elements for the CSV from either:
+#         - populated api item_data
+#         - or, on unsuccessful api-call, just the barcode and note
+#         """
+#     try:
+#         ## initialize vars
+#         ( title, barcode, birkin_note, library_before, library_todo, library_after, location_before, location_todo, location_after, base_status_before, base_status_todo, base_status_after, process_type_before, process_type_todo, process_type_after, bruknow_url ) = ( '', barcode, '', '', '', '', '', '', '', '', '', '', '', '', '', '' )
+#         if item_data == {}:
+#             birkin_note: str = 'could not query barcode'
+#         elif 'errorsExist' in item_data.keys():
+#             birkin_note: str = 'error in query response'
+#             if 'errorList' in item_data.keys():
+#                 # log.debug( 'hereA' )
+#                 if 'error' in item_data['errorList']:
+#                     # log.debug( 'hereB' )
+#                     errors: list = item_data['errorList']['error']
+#                     for error in errors:
+#                         # log.debug( 'hereC' )
+#                         if 'errorMessage' in error.keys():
+#                             # log.debug( 'hereD' )
+#                             # if error['errorMessage'] == 'no items found for barcode'.lower():
+#                             if 'no items found for barcode' in error['errorMessage'].lower():
+#                                 # log.debug( 'hereE' )
+#                                 birkin_note = 'no match found for barcode'
+#                                 break
+#             log.info( f'item_data on extraction-problem, ``{pprint.pformat(item_data)}``' )
+#         else:
+#             title: str = item_data['bib_data']['title']  # accessing elements separately so if there's an error, the traceback will show where it occurred
+#             if len(title) > 30:
+#                 title = f'{title[0:27]}...'
+#             mmsid: str = stringify_data( item_data['bib_data']['mms_id'] ) 
+#             holding_id: str = stringify_data( item_data['holding_data']['holding_id'] )
+#             item_pid: str = stringify_data( item_data['item_data']['pid'] )
+#             ##
+#             library_before: str = stringify_data( item_data['item_data']['library'] )
+#             library_todo: str = item_data['item_data']['library_eval']
+#             library_after: str = stringify_data( updated_item_data['item_data']['library'] ) if updated_item_data else 'no-change-made'
+#             ##
+#             location_before: str = stringify_data( item_data['item_data']['location'] )
+#             location_todo: str = item_data['item_data']['location_eval']
+#             location_after: str = stringify_data( updated_item_data['item_data']['location'] ) if updated_item_data else 'no-change-made'
+#             ##
+#             base_status_before: str = stringify_data( item_data['item_data']['base_status'] )
+#             base_status_todo: str = item_data['item_data']['base_status_eval']
+#             base_status_after: str = stringify_data( updated_item_data['item_data']['base_status'] ) if updated_item_data else 'no-change-made'
+#             ##
+#             process_type_before: str = stringify_data( item_data['item_data']['process_type'] )
+#             process_type_todo: str = item_data['item_data']['process_type_eval']
+#             process_type_after: str = stringify_data( updated_item_data['item_data']['process_type'] ) if updated_item_data else 'no-change-made'
+#             ##
+#             bruknow_url: str = f'<https://bruknow.library.brown.edu/discovery/fulldisplay?docid=alma{mmsid}&vid=01BU_INST:BROWN>'
+#         extracted_data = [ title, barcode, birkin_note, library_before, library_todo, library_after, location_before, location_todo, location_after, base_status_before, base_status_todo, base_status_after, process_type_before, process_type_todo, process_type_after, bruknow_url ]
+#     except Exception as e:
+#         log.exception( f'problem extracting data from item_data, ``{pprint.pformat(item_data)}``' )
+#         raise Exception( 'problem extracting data; see logs' )
+#     log.debug( f'extracted_data, ``{pprint.pformat(extracted_data)}``' )
+#     assert len(extracted_data) == 16
+#     return extracted_data
+
+#     ## end def extract_data()
     
 
 def stringify_data( data ) -> str:
