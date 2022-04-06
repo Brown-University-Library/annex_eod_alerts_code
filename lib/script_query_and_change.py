@@ -246,8 +246,10 @@ def extract_data( barcode: str, item_data: dict, updated_item_data: dict ) -> li
         ## initialize vars
         ( title, barcode, birkin_note, library_before, library_todo, library_after, location_before, location_todo, location_after, base_status_before, base_status_todo, base_status_after, process_type_before, process_type_todo, process_type_after, bruknow_url ) = ( '', barcode, '', '', '', '', '', '', '', '', '', '', '', '', '', '' )
         if item_data == {}:
+            log.debug( 'item_data is {}' )
             birkin_note: str = 'could not query barcode'
         elif 'errorsExist' in item_data.keys():
+            log.debug( 'errors exist in item_data' )
             birkin_note: str = 'error in query response'
             if 'errorList' in item_data.keys():
                 # log.debug( 'hereA' )
@@ -268,7 +270,11 @@ def extract_data( barcode: str, item_data: dict, updated_item_data: dict ) -> li
                                 birkin_note = f'update-error-response, ``{err_msg}``' 
                                 break
             log.info( f'item_data on extraction-problem, ``{pprint.pformat(item_data)}``' )
-        else:
+        elif updated_item_data == {}:
+            birkin_note: str = 'problem handling update response'
+        elif 'errorsExist' in updated_item_data.keys():
+            birkin_note: str = f'update error-response, ``{repr(updated_item_data)}``'
+        else:  ## all should be good
             title: str = item_data['bib_data']['title']  # accessing elements separately so if there's an error, the traceback will show where it occurred
             if len(title) > 30:
                 title = f'{title[0:27]}...'
