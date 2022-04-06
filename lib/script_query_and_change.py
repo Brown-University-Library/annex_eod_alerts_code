@@ -263,6 +263,10 @@ def extract_data( barcode: str, item_data: dict, updated_item_data: dict ) -> li
                                 # log.debug( 'hereE' )
                                 birkin_note = 'no match found for barcode'
                                 break
+                            else:
+                                err_msg: str = error['errorMessage']
+                                birkin_note = f'update-error-response, ``{err_msg}``' 
+                                break
             log.info( f'item_data on extraction-problem, ``{pprint.pformat(item_data)}``' )
         else:
             title: str = item_data['bib_data']['title']  # accessing elements separately so if there's an error, the traceback will show where it occurred
