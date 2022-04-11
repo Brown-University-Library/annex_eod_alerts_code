@@ -4,8 +4,10 @@ This script:
 - Loads up the barcodes, and for each barcode...
     - Performs a GET lookup and stores the original data
     - Executes a PUT change and stores the resulting data
+      Note: Currently "library" and "location" are successfully changed; 
+            "base_status" and "process_type" are not.
 - Constructs a CSV with results
-- Emails the CSV as en attachment
+- Emails the CSV as an attachment
 
 Usage...
 - assumes:
@@ -112,30 +114,26 @@ def manage_barcode_processing( file_path: str, emails: list ) -> None:
 # -------------------------------------------------------------------
 
 
-def try_update( payload_data: dict ) -> dict:
-    """ Will try update here.
-        Called by manage_barcode_processing() """
-    log.debug( 'about to try PUT...' )
-    log.debug( f'payload_data, ``{pprint.pformat(payload_data)}``' )
-    ## setup --------------------------------------------------------
-    mmsid: str = stringify_data( payload_data['bib_data']['mms_id'] ) 
-    holding_id: str = stringify_data( payload_data['holding_data']['holding_id'] )
-    item_pid: str = stringify_data( payload_data['item_data']['pid'] )
-    ## call item-put api --------------------------------------------
-    put_url_base = ENVAR_ITEM_PUT_URL_ROOT.replace( '{MMSID}', mmsid ).replace( '{HOLDING_ID}', holding_id ).replace( '{ITEM_PID}', item_pid )
-    put_url = f'{put_url_base}?generate_description=false&apikey={ENVAR_API_KEY}'
-    # log.debug( f'put_url, ``{put_url}``' )
-    header_dct = {'Accept': 'application/json', 'Content-Type': 'application/json'}  # 'Content-Type' not needed for GET
-    returned_put_data: dict = {}
-    try:
-        r = requests.put( put_url, json=payload_data, headers=header_dct, timeout=20 )
-        ## inspect result -----------------------------------------------
-        # log.debug( f' r.content, ``{r.content}``')
-        returned_put_data: dict = r.json()
-    except Exception as e:
-        log.exception( f'Problem on PUT, ``{repr(e)}``' )
-    log.debug( f'returned_put_data, ``{pprint.pformat(returned_put_data)}``' )
-    return returned_put_data
+def determine_file_type( file_name: str ) -> str:
+    """ Returns the file_type from inspecting the file-name. 
+        Called by: manage_barcode_processing() """
+    file_type: str = 'init'
+    for type in [ 'QHACS', 'QHREF', 'QSACS', 'QSREF' ]:
+        if type in file_name:
+            file_type = type
+            break
+    log.debug( f'file_type, ``{file_type}``' )
+    return file_type
+
+
+def prepare_api_url( barcode: str ) -> dict:
+    headers = {}
+    api_url: str = f'{ENVAR_ITEM_GET_URL_ROOT}?item_barcode={barcode}&apikey={ENVAR_API_KEY}'
+    headers: dict = {'Accept': 'application/json'}
+    url_data: dict = {
+        'headers': headers, 'api_url': api_url }
+    log.debug( 'api url_data prepared' )
+    return url_data
 
 
 def evaluate_data( file_type: str, item_data: dict ) -> dict:
@@ -214,27 +212,33 @@ def evaluate_data( file_type: str, item_data: dict ) -> dict:
     log.debug( f'item_data at END of evaluate, ``{pprint.pformat(item_data)}``' )
     return payload_data
 
-
-def determine_file_type( file_name: str ) -> str:
-    """ Returns the file_type from inspecting the file-name. 
-        Called by: manage_barcode_processing() """
-    file_type: str = 'init'
-    for type in [ 'QHACS', 'QHREF', 'QSACS', 'QSREF' ]:
-        if type in file_name:
-            file_type = type
-            break
-    log.debug( f'file_type, ``{file_type}``' )
-    return file_type
+    ## end def evaluate_data()
 
 
-def prepare_api_url( barcode: str ) -> dict:
-    headers = {}
-    api_url: str = f'{ENVAR_ITEM_GET_URL_ROOT}?item_barcode={barcode}&apikey={ENVAR_API_KEY}'
-    headers: dict = {'Accept': 'application/json'}
-    url_data: dict = {
-        'headers': headers, 'api_url': api_url }
-    log.debug( 'api url_data prepared' )
-    return url_data
+def try_update( payload_data: dict ) -> dict:
+    """ Will try update here.
+        Called by manage_barcode_processing() """
+    log.debug( 'about to try PUT...' )
+    log.debug( f'payload_data, ``{pprint.pformat(payload_data)}``' )
+    ## setup --------------------------------------------------------
+    mmsid: str = stringify_data( payload_data['bib_data']['mms_id'] ) 
+    holding_id: str = stringify_data( payload_data['holding_data']['holding_id'] )
+    item_pid: str = stringify_data( payload_data['item_data']['pid'] )
+    ## call item-put api --------------------------------------------
+    put_url_base = ENVAR_ITEM_PUT_URL_ROOT.replace( '{MMSID}', mmsid ).replace( '{HOLDING_ID}', holding_id ).replace( '{ITEM_PID}', item_pid )
+    put_url = f'{put_url_base}?generate_description=false&apikey={ENVAR_API_KEY}'
+    # log.debug( f'put_url, ``{put_url}``' )
+    header_dct = {'Accept': 'application/json', 'Content-Type': 'application/json'}  # 'Content-Type' not needed for GET
+    returned_put_data: dict = {}
+    try:
+        r = requests.put( put_url, json=payload_data, headers=header_dct, timeout=20 )
+        ## inspect result -----------------------------------------------
+        # log.debug( f' r.content, ``{r.content}``')
+        returned_put_data: dict = r.json()
+    except Exception as e:
+        log.exception( f'Problem on PUT, ``{repr(e)}``' )
+    log.debug( f'returned_put_data, ``{pprint.pformat(returned_put_data)}``' )
+    return returned_put_data
 
 
 def extract_data( barcode: str, item_data: dict, updated_item_data: dict ) -> list:
@@ -318,69 +322,6 @@ def extract_data( barcode: str, item_data: dict, updated_item_data: dict ) -> li
     return extracted_data
 
     ## end def extract_data()
-
-
-# def extract_data( barcode: str, item_data: dict, updated_item_data: dict ) -> list:
-#     """ Returns data-elements for the CSV from either:
-#         - populated api item_data
-#         - or, on unsuccessful api-call, just the barcode and note
-#         """
-#     try:
-#         ## initialize vars
-#         ( title, barcode, birkin_note, library_before, library_todo, library_after, location_before, location_todo, location_after, base_status_before, base_status_todo, base_status_after, process_type_before, process_type_todo, process_type_after, bruknow_url ) = ( '', barcode, '', '', '', '', '', '', '', '', '', '', '', '', '', '' )
-#         if item_data == {}:
-#             birkin_note: str = 'could not query barcode'
-#         elif 'errorsExist' in item_data.keys():
-#             birkin_note: str = 'error in query response'
-#             if 'errorList' in item_data.keys():
-#                 # log.debug( 'hereA' )
-#                 if 'error' in item_data['errorList']:
-#                     # log.debug( 'hereB' )
-#                     errors: list = item_data['errorList']['error']
-#                     for error in errors:
-#                         # log.debug( 'hereC' )
-#                         if 'errorMessage' in error.keys():
-#                             # log.debug( 'hereD' )
-#                             # if error['errorMessage'] == 'no items found for barcode'.lower():
-#                             if 'no items found for barcode' in error['errorMessage'].lower():
-#                                 # log.debug( 'hereE' )
-#                                 birkin_note = 'no match found for barcode'
-#                                 break
-#             log.info( f'item_data on extraction-problem, ``{pprint.pformat(item_data)}``' )
-#         else:
-#             title: str = item_data['bib_data']['title']  # accessing elements separately so if there's an error, the traceback will show where it occurred
-#             if len(title) > 30:
-#                 title = f'{title[0:27]}...'
-#             mmsid: str = stringify_data( item_data['bib_data']['mms_id'] ) 
-#             holding_id: str = stringify_data( item_data['holding_data']['holding_id'] )
-#             item_pid: str = stringify_data( item_data['item_data']['pid'] )
-#             ##
-#             library_before: str = stringify_data( item_data['item_data']['library'] )
-#             library_todo: str = item_data['item_data']['library_eval']
-#             library_after: str = stringify_data( updated_item_data['item_data']['library'] ) if updated_item_data else 'no-change-made'
-#             ##
-#             location_before: str = stringify_data( item_data['item_data']['location'] )
-#             location_todo: str = item_data['item_data']['location_eval']
-#             location_after: str = stringify_data( updated_item_data['item_data']['location'] ) if updated_item_data else 'no-change-made'
-#             ##
-#             base_status_before: str = stringify_data( item_data['item_data']['base_status'] )
-#             base_status_todo: str = item_data['item_data']['base_status_eval']
-#             base_status_after: str = stringify_data( updated_item_data['item_data']['base_status'] ) if updated_item_data else 'no-change-made'
-#             ##
-#             process_type_before: str = stringify_data( item_data['item_data']['process_type'] )
-#             process_type_todo: str = item_data['item_data']['process_type_eval']
-#             process_type_after: str = stringify_data( updated_item_data['item_data']['process_type'] ) if updated_item_data else 'no-change-made'
-#             ##
-#             bruknow_url: str = f'<https://bruknow.library.brown.edu/discovery/fulldisplay?docid=alma{mmsid}&vid=01BU_INST:BROWN>'
-#         extracted_data = [ title, barcode, birkin_note, library_before, library_todo, library_after, location_before, location_todo, location_after, base_status_before, base_status_todo, base_status_after, process_type_before, process_type_todo, process_type_after, bruknow_url ]
-#     except Exception as e:
-#         log.exception( f'problem extracting data from item_data, ``{pprint.pformat(item_data)}``' )
-#         raise Exception( 'problem extracting data; see logs' )
-#     log.debug( f'extracted_data, ``{pprint.pformat(extracted_data)}``' )
-#     assert len(extracted_data) == 16
-#     return extracted_data
-
-#     ## end def extract_data()
     
 
 def stringify_data( data ) -> str:
@@ -393,7 +334,7 @@ def stringify_data( data ) -> str:
 
 def send_mail( file_like_handler, file_name: str, emails: list ) -> None:
     """ Tests build of email with a CSV attachment.
-        Called by manage_csv_email() 
+        Called by manage_barcode_processing()() 
         TODO test multiple attachments. """
     ## setup --------------------------------------------------------
     EMAIL_SUBJECT: str = 'The Subject'
@@ -432,6 +373,11 @@ def send_mail( file_like_handler, file_name: str, emails: list ) -> None:
     ## end def send_mail()
 
 
+# -------------------------------------------------------------------
+# caller handlers
+# -------------------------------------------------------------------
+
+
 def parse_args() -> dict:
     """ Parses arguments when module called via __main__ """
     parser = argparse.ArgumentParser( description='Required: file_path and email (comma-separated if multiple).' )
@@ -449,6 +395,3 @@ if __name__ == '__main__':
     emails: list = email_str.split( ',' )
     log.debug( f'emails, ``{emails}``' )
     manage_barcode_processing( file_path, emails )
-
-
-
